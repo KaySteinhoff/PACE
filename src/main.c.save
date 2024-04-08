@@ -1,0 +1,60 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <SpacE.h>
+#include <math.h>
+#include <3dpc.h>
+
+int main(int argc, char **argv)
+{
+	SpacE *space = CreateSpacE(800, 600);
+
+	if(!space)
+	{
+		printf("Failed to create space!\n");
+		return -1;
+	}
+
+
+	SEMesh *tri = LoadMeshFromFile("tri.3dpc", LoadShaderFromSource("shaders/default.vert", "shaders/default.frag"));
+	SEMesh *tri1 = LoadMeshFromFile("_tri.3dpc", LoadShaderFromSource("shaders/default.vert", "shaders/default.frag"));
+	if(!tri || !tri->shader || !tri1 || !tri1->shader)
+	{
+		printf("Failed to load model(s)!\n");
+		return -3;
+	}
+
+	SETexture *brick = LoadTextureFromFile("Test.jpg", GL_RGB, GL_RGB);
+	if(!brick)
+	{
+		printf("Failed to load texture!\n");
+		return -2;
+	}
+	tri->shader->texture = brick;
+	tri1->shader->texture = brick;
+
+	SEScene *scene = CreateScene();
+	AddMeshToScene(scene, tri);
+	AddMeshToScene(scene, tri1);
+	space->loadedScene = scene;
+	tri->transform.pz = -5;
+	tri1->transform.py = -2;
+	tri1->transform.pz = -6;
+
+	while(space->running)
+	{
+		PollSpacE(space);
+/*		float time = glfwGetTime();
+		float sinTime = sin(time);
+		float cosTime = cos(time);
+		tri->transform.px = sinTime;
+		tri->transform.py = cosTime;
+		tri1->transform.ry = time;
+*/
+		UpdateWindowContent(space);
+	}
+
+	ClearSpacE(space);
+
+	return 0;
+}
