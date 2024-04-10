@@ -101,8 +101,8 @@ class PAMesh
 {
 private:
 	GLuint vao;
-	float *vertices;
 public:
+	float *data;
 	uint32_t numVertices;
 	uint32_t numFaces;
 

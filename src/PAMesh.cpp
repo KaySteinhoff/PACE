@@ -12,6 +12,8 @@ int PAMesh::SetVertices(float *vertices, uint32_t numVertices)
 	if(!vertices || numVertices <= 0)
 		return 0;
 
+	data = vertices;
+
 	glBindVertexArray(vao);
 
 	size_t vertSize = numVertices*sizeof(float);
@@ -30,6 +32,12 @@ int PAMesh::SetVertices(float *vertices, uint32_t numVertices)
 
 void PAMesh::Draw()
 {
+	if(!shader || !shader->texture)
+	{
+		printf("No shader applied!\n");
+		return;
+	}
+
 	transform.ApplyTransform(transform.transformMatrix);
 	glUniformMatrix4fv(shader->modelLocation, 1, GL_FALSE, (const GLfloat*)transform.transformMatrix);
 
@@ -44,6 +52,6 @@ void PAMesh::Draw()
 
 PAMesh::~PAMesh()
 {
-	free(vertices);
+	free(data);
 	free(shader);
 }

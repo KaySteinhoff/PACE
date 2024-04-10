@@ -2,12 +2,12 @@
 
 #define INVALID_UNIFORM_LOCATION 0xffffffff
 
-void EnableShader(PAShader *shader)
+void PAShader::EnableShader(PAShader *shader)
 {
 	glUseProgram(shader->ID);
 }
 
-PAShader *LoadShaderFromSource(char *vertexSource, char *fragmentSource)
+PAShader* PAShader::LoadShaderFromSource(char *vertexSource, char *fragmentSource)
 {
 	FILE *source = fopen(vertexSource, "r");
 
@@ -68,7 +68,7 @@ int LogShaderCompile(GLuint shaderID)
 	return 0;
 }
 
-int SetInt(PAShader *shader, const char *name, int value)
+int PAShader::SetInt(PAShader *shader, const char *name, int value)
 {
 	GLint location = glGetUniformLocation(shader->ID, name);
 
@@ -79,7 +79,7 @@ int SetInt(PAShader *shader, const char *name, int value)
 	return 1;
 }
 
-int SetFloat(PAShader *shader, const char *name, float value)
+int PAShader::SetFloat(PAShader *shader, const char *name, float value)
 {
 	GLint location = glGetUniformLocation(shader->ID, name);
 
@@ -90,7 +90,7 @@ int SetFloat(PAShader *shader, const char *name, float value)
 	return 1;
 }
 
-PAShader* CompileShader(const char *vertexShader, const char *fragmentShader)
+PAShader* PAShader::CompileShader(const char *vertexShader, const char *fragmentShader)
 {
 	PAShader *shader = malloc(sizeof(PAShader));
 

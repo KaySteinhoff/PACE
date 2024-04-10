@@ -7,7 +7,7 @@
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
 	glViewport(0, 0, width, height);
-	mat4x4_perspective(PACE::GetInstance()->projectionMatrix, M_PI/2.0, width/(float)height, PACE::GetInstance()->nearPlane, PACE::GetInstance()->farPlane);
+	mat4x4_perspective(PACE::GetInstance()->projectionMatrix, 3.1415926536/4.0, width/(float)height, PACE::GetInstance()->nearPlane, PACE::GetInstance()->farPlane);
 	mat4x4_ortho(PACE::GetInstance()->orthoMatrix, 0, width, height, 0, 1, -1);
 }
 
@@ -70,7 +70,7 @@ void PACE::INIT(uint32_t width, uint32_t height, float nearPlane, float farPlane
 	mat4x4_identity(instance->projectionMatrix);
 	mat4x4_identity(instance->orthoMatrix);
 
-	mat4x4_perspective(instance->projectionMatrix, M_PI/2.0, width/(float)height, nearPlane, farPlane);
+	mat4x4_perspective(instance->projectionMatrix, 3.1415926/4.0, width/(float)height, nearPlane, farPlane);
 	mat4x4_ortho(instance->orthoMatrix, 0, width, height, 0, 1, -1);
 }
 
@@ -95,13 +95,15 @@ void PACE::Poll()
 	if(!running)
 		return;
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glfwPollEvents();
 }
 
 void PACE::UpdateContents()
 {
 	if(!loadedScene)
 		goto PACE_RENDER_BUFFER_SWAP;
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	cameraTransform.ApplyTransform(viewMatrix);
 	viewMatrix[3][0] = -(cameraTransform.px * right[0] + cameraTransform.py * right[1] + cameraTransform.pz * right[2]);
@@ -127,7 +129,6 @@ void PACE::UpdateContents()
 	}
 
 PACE_RENDER_BUFFER_SWAP:
-	glfwPollEvents();
 	glfwSwapBuffers(window);
 }
 
