@@ -12,7 +12,7 @@
 PACamera *camera;
 PACE *pace;
 int showCursor = 0;
-float speed = 4231941*0.01, mouseSpeed = 0.001, elapsedTime = 0;
+float speed = 4231941*0.01, mouseSpeed = 10, elapsedTime = 0;
 clock_t start;
 
 int keyPressed = -1;
@@ -23,20 +23,9 @@ void mouse_callback(double x, double y)
 	if(showCursor)
 		return;
 
-	//delta x/y rotation
-	camera->transform.ry += (x-400)*mouseSpeed;//elapsedTime;
-	camera->transform.rx += (y-300)*mouseSpeed;//elapsedTime;
-	//calculate forward vector with new rotation
-	camera->forward[0] = cos(camera->transform.rx) * sin(camera->transform.ry);
-	camera->forward[1] = sin(camera->transform.rx);
-	camera->forward[2] = cos(camera->transform.rx) * cos(camera->transform.ry);
+	camera->transform.ry += (x-400)*mouseSpeed * elapsedTime;
+	camera->transform.rx += (y-300)*mouseSpeed * elapsedTime;
 
-	//calculate right vector with new rotation(y always 0)
-	camera->right[0] = sin(camera->transform.ry-M_PI/2.0);
-	camera->right[2] = cos(camera->transform.ry-M_PI/2.0);
-
-	//cross forward and right vector to get the up vector
-	vec3_mul_cross(camera->up, camera->right, camera->forward);
 	glfwSetCursorPos(pace->window, 400, 300);
 }
 
@@ -229,24 +218,24 @@ int main(int argc, char **argv)
 				showCursor = 1;
 				break;
 			case 'W':
-				camera->transform.px -= camera->forward[0] * speed * elapsedTime;
-				camera->transform.py -= camera->forward[1] * speed * elapsedTime;
-				camera->transform.pz -= camera->forward[2] * speed * elapsedTime;
+				camera->transform.px -= camera->transform.forward[0] * speed * elapsedTime;
+				camera->transform.py -= camera->transform.forward[1] * speed * elapsedTime;
+				camera->transform.pz -= camera->transform.forward[2] * speed * elapsedTime;
 				break;
 			case 'A':
-				camera->transform.px -= camera->right[0] * speed * elapsedTime;
-				camera->transform.py -= camera->right[1] * speed * elapsedTime;
-				camera->transform.pz -= camera->right[2] * speed * elapsedTime;
+				camera->transform.px -= camera->transform.right[0] * speed * elapsedTime;
+				camera->transform.py -= camera->transform.right[1] * speed * elapsedTime;
+				camera->transform.pz -= camera->transform.right[2] * speed * elapsedTime;
 				break;
 			case 'S':
-				camera->transform.px += camera->forward[0] * speed * elapsedTime;
-				camera->transform.py += camera->forward[1] * speed * elapsedTime;
-				camera->transform.pz += camera->forward[2] * speed * elapsedTime;
+				camera->transform.px += camera->transform.forward[0] * speed * elapsedTime;
+				camera->transform.py += camera->transform.forward[1] * speed * elapsedTime;
+				camera->transform.pz += camera->transform.forward[2] * speed * elapsedTime;
 				break;
 			case 'D':
-				camera->transform.px += camera->right[0] * speed * elapsedTime;
-				camera->transform.py += camera->right[1] * speed * elapsedTime;
-				camera->transform.pz += camera->right[2] * speed * elapsedTime;
+				camera->transform.px += camera->transform.right[0] * speed * elapsedTime;
+				camera->transform.py += camera->transform.right[1] * speed * elapsedTime;
+				camera->transform.pz += camera->transform.right[2] * speed * elapsedTime;
 				break;
 
 		}

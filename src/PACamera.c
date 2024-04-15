@@ -22,18 +22,6 @@ PACamera* CreateCamera(uint32_t width, uint32_t height, float nearPlane, float f
 
 	camera->viewMode = PAProjection;
 
-	camera->forward[0] = 0;
-	camera->forward[1] = 0;
-	camera->forward[2] = 1;
-
-	camera->up[0] = 0;
-	camera->up[1] = 1;
-	camera->up[2] = 0;
-
-	camera->right[0] = 1;
-	camera->right[1] = 0;
-	camera->right[2] = 0;
-
 	return camera;
 }
 
@@ -45,8 +33,8 @@ void RescaleCamera(PACamera *camera, uint32_t width, uint32_t height)
 
 void TransformCamera(PACamera *camera)
 {
-	mat4x4_apply_transform(camera->transform.transformMatrix, camera->transform);
-	camera->transform.transformMatrix[3][0] = -(camera->transform.px * camera->right[0] + camera->transform.py * camera->right[1] + camera->transform.pz * camera->right[2]);
-	camera->transform.transformMatrix[3][1] = -(camera->transform.px * camera->up[0] + camera->transform.py * camera->up[1] + camera->transform.pz * camera->up[2]);
-	camera->transform.transformMatrix[3][2] = -(camera->transform.px * camera->forward[0] + camera->transform.py * camera->forward[1] + camera->transform.pz * camera->forward[2]);
+	mat4x4_apply_transform(camera->transform.transformMatrix, &camera->transform);
+	camera->transform.transformMatrix[3][0] = -(camera->transform.px * camera->transform.right[0] + camera->transform.py * camera->transform.right[1] + camera->transform.pz * camera->transform.right[2]);
+	camera->transform.transformMatrix[3][1] = -(camera->transform.px * camera->transform.up[0] + camera->transform.py * camera->transform.up[1] + camera->transform.pz * camera->transform.up[2]);
+	camera->transform.transformMatrix[3][2] = -(camera->transform.px * camera->transform.forward[0] + camera->transform.py * camera->transform.forward[1] + camera->transform.pz * camera->transform.forward[2]);
 }

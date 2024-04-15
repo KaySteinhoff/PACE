@@ -40,7 +40,7 @@ void DrawMesh(PAMesh *mesh)
 	//Use mesh shader
 	glUseProgram(mesh->shader->ID);
 	//Transform current mesh
-	mat4x4_apply_transform(mesh->transform.transformMatrix, mesh->transform);
+	mat4x4_apply_transform(mesh->transform.transformMatrix, &mesh->transform);
 	glUniformMatrix4fv(mesh->shader->modelLocation, 1, GL_FALSE, (const GLfloat*)mesh->transform.transformMatrix);
 
 	//Activate Texture of current mesh

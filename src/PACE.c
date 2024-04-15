@@ -91,7 +91,6 @@ PACE* CreatePACE(uint32_t width, uint32_t height, PACamera *camera)
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-//	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glViewport(0, 0, width, height);
 
 	glfwSetFramebufferSizeCallback(pace->window, framebuffer_size_callback);

@@ -96,7 +96,7 @@ void PickObjects(PACamera *camera, PAPickingTexture *papickingTexture, PAMesh **
 
 	for(int i = 0; i < numMeshes; ++i)
 	{
-		mat4x4_apply_transform(meshes[i]->transform.transformMatrix, meshes[i]->transform);
+		mat4x4_apply_transform(meshes[i]->transform.transformMatrix, &meshes[i]->transform);
 
 		glUniform1ui(glGetUniformLocation(papickingTexture->pickingShader->ID, "gObjectIndex"), i + 1);
 		glUniformMatrix4fv(papickingTexture->pickingShader->modelLocation, 1, GL_FALSE, (const GLfloat*)meshes[i]->transform.transformMatrix);
