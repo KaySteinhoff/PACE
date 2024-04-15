@@ -9,6 +9,7 @@
 #define _USE_MATH_DEFINES
 
 //TODO:Implement UI functionality and fix "warping" while moving
+PACamera *camera;
 PACE *pace;
 int showCursor = 0;
 float speed = 4231941*0.01, mouseSpeed = 0.001, elapsedTime = 0;
@@ -22,19 +23,19 @@ void mouse_callback(double x, double y)
 		return;
 
 	//delta x/y rotation
-	pace->cameraTransform.ry += (x-400)*mouseSpeed;//elapsedTime;
-	pace->cameraTransform.rx += (y-300)*mouseSpeed;//elapsedTime;
+	camera->transform.ry += (x-400)*mouseSpeed;//elapsedTime;
+	camera->transform.rx += (y-300)*mouseSpeed;//elapsedTime;
 	//calculate forward vector with new rotation
-	pace->forward[0] = cos(pace->cameraTransform.rx) * sin(pace->cameraTransform.ry);
-	pace->forward[1] = sin(pace->cameraTransform.rx);
-	pace->forward[2] = cos(pace->cameraTransform.rx) * cos(pace->cameraTransform.ry);
+	camera->forward[0] = cos(camera->transform.rx) * sin(camera->transform.ry);
+	camera->forward[1] = sin(camera->transform.rx);
+	camera->forward[2] = cos(camera->transform.rx) * cos(camera->transform.ry);
 
 	//calculate right vector with new rotation(y always 0)
-	pace->right[0] = sin(pace->cameraTransform.ry-M_PI/2.0);
-	pace->right[2] = cos(pace->cameraTransform.ry-M_PI/2.0);
+	camera->right[0] = sin(camera->transform.ry-M_PI/2.0);
+	camera->right[2] = cos(camera->transform.ry-M_PI/2.0);
 
 	//cross forward and right vector to get the up vector
-	vec3_mul_cross(pace->up, pace->right, pace->forward);
+	vec3_mul_cross(camera->up, camera->right, camera->forward);
 	glfwSetCursorPos(pace->window, 400, 300);
 }
 
@@ -51,7 +52,9 @@ void key_callback(int key, int scancode, int action, int mods)
 
 int main(int argc, char **argv)
 {
-	pace = CreatePACE(800, 600, 0.1, 100000);
+	camera = CreateCamera(800, 600, 0.1, 100000);
+
+	pace = CreatePACE(800, 600, camera);
 
 	if(!pace)
 	{
@@ -63,7 +66,6 @@ int main(int argc, char **argv)
 	glClearColor(0, 0, 0, 1);
 	PACESetKeyCallback(key_callback);
 	PACESetMouseMovedCallback(mouse_callback);
-//	glfwSetInputMode(pace->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	PACE_hide_cursor(pace);
 
 	PAMesh *skybox = LoadMeshFromFile("skybox.3dpc", LoadShaderFromSource("shaders/skybox.vert", "shaders/skybox.frag"));
@@ -150,7 +152,7 @@ int main(int argc, char **argv)
 
 	PAScene *scene = CreateScene();
 	//Add UI
-//	AddUIToScene(scene, rect);
+	AddUIToScene(scene, rect);
 
 	AddMeshToScene(scene, skybox);
 	AddMeshToScene(scene, mercury);
@@ -233,24 +235,24 @@ int main(int argc, char **argv)
 				showCursor = 1;
 				break;
 			case 'W':
-				pace->cameraTransform.px -= pace->forward[0] * speed * elapsedTime;
-				pace->cameraTransform.py -= pace->forward[1] * speed * elapsedTime;
-				pace->cameraTransform.pz -= pace->forward[2] * speed * elapsedTime;
+				camera->transform.px -= camera->forward[0] * speed * elapsedTime;
+				camera->transform.py -= camera->forward[1] * speed * elapsedTime;
+				camera->transform.pz -= camera->forward[2] * speed * elapsedTime;
 				break;
 			case 'A':
-				pace->cameraTransform.px -= pace->right[0] * speed * elapsedTime;
-				pace->cameraTransform.py -= pace->right[1] * speed * elapsedTime;
-				pace->cameraTransform.pz -= pace->right[2] * speed * elapsedTime;
+				camera->transform.px -= camera->right[0] * speed * elapsedTime;
+				camera->transform.py -= camera->right[1] * speed * elapsedTime;
+				camera->transform.pz -= camera->right[2] * speed * elapsedTime;
 				break;
 			case 'S':
-				pace->cameraTransform.px += pace->forward[0] * speed * elapsedTime;
-				pace->cameraTransform.py += pace->forward[1] * speed * elapsedTime;
-				pace->cameraTransform.pz += pace->forward[2] * speed * elapsedTime;
+				camera->transform.px += camera->forward[0] * speed * elapsedTime;
+				camera->transform.py += camera->forward[1] * speed * elapsedTime;
+				camera->transform.pz += camera->forward[2] * speed * elapsedTime;
 				break;
 			case 'D':
-				pace->cameraTransform.px += pace->right[0] * speed * elapsedTime;
-				pace->cameraTransform.py += pace->right[1] * speed * elapsedTime;
-				pace->cameraTransform.pz += pace->right[2] * speed * elapsedTime;
+				camera->transform.px += camera->right[0] * speed * elapsedTime;
+				camera->transform.py += camera->right[1] * speed * elapsedTime;
+				camera->transform.pz += camera->right[2] * speed * elapsedTime;
 				break;
 
 		}
