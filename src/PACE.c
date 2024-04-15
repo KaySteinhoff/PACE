@@ -16,7 +16,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 	{
 		if(paceObjs[i]->window != window)
 			continue;
-		mat4x4_perspective(paceObjs[i]->projectionMatrix, 3.1415926536/4.0, width/(float)height, paceObjs[i]->nearPlane, paceObjs[i]->farPlane);
+		RescaleCamera(paceObjs[i]->currentCamera, width, height);
 		break;
 	}
 }
@@ -43,7 +43,7 @@ void PACE_key_press_callback(GLFWwindow *window, int key, int scancode, int acti
 		PACE_key_callback(key, scancode, action, mods);
 }
 
-PACE* CreatePACE(uint32_t width, uint32_t height, float nearPlane, float farPlane)
+PACE* CreatePACE(uint32_t width, uint32_t height, PACamera *camera)
 {
 	if(!paceObjs)
 	{
@@ -70,22 +70,30 @@ PACE* CreatePACE(uint32_t width, uint32_t height, float nearPlane, float farPlan
 		paceObjs = tmp;
 	}
 
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	if(!glfwInit())
+	{
+		printf("Failed to initialize GLFW!\n");
+		paceObjsNum--;
+		free(pace);
+		return NULL;
+	}
 
 	pace->window = glfwCreateWindow(width, height, "SpacE", NULL, NULL);
 
 	if(!pace->window)
 	{
-		printf("Failed to create window");
+		printf("Failed to create window\n");
 		free(pace);
 		return NULL;
 	}
 
 	glfwMakeContextCurrent(pace->window);
+
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+//	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glViewport(0, 0, width, height);
+
 	glfwSetFramebufferSizeCallback(pace->window, framebuffer_size_callback);
 	glfwSetKeyCallback(pace->window, PACE_key_press_callback);
 	glfwSetCursorPosCallback(pace->window, PACE_cursor_position_changed_callback);
@@ -95,38 +103,10 @@ PACE* CreatePACE(uint32_t width, uint32_t height, float nearPlane, float farPlan
 	printf("%s\n", glewGetErrorString(glewInit()));
 
 	pace->running = 1;
-	pace->numScenes = 0;
-	pace->allocScenes = 1;
 
-	pace->nearPlane = nearPlane;
-	pace->farPlane = farPlane;
-
-	pace->scenes = malloc(sizeof(PAScene));
-	if(!pace->scenes)
-	{
-		printf("Failed to alloc scenes");
-		free(pace->window);
-		free(pace);
-		return NULL;
-	}
-
-	pace->defaultShader = LoadShaderFromSource("./shaders/default.vert", "./shaders/default.frag");
-	if(!pace->defaultShader)
-		printf("Failed to load default shader!\n");
-	pace->papickingTexture = CreatePickingTexture(width, height);
-	if(!pace->papickingTexture)
-		printf("Failed to load picking texture! Won't be able to raycast!\n");
-
-	DEFAULT_TRANSFORM(defaultT);
-	pace->cameraTransform = defaultT;
-
-	mat4x4_identity(pace->identMatrix);
-	mat4x4_identity(pace->viewMatrix);
-	mat4x4_identity(pace->projectionMatrix);
-	mat4x4_identity(pace->orthoMatrix);
-
-	mat4x4_perspective(pace->projectionMatrix, 3.1415926536/4.0, width/(float)height, nearPlane, farPlane);
-	mat4x4_ortho(pace->orthoMatrix, 0, width, height, 0, 1, -1);
+	if(!camera)
+		pace->currentCamera = CreateCamera(width, height, 0.1, 1000);
+	else pace->currentCamera = camera;
 
 	return pace;
 }
@@ -160,17 +140,17 @@ void UpdateWindowContent(PACE *pace)
 	if(!pace->loadedScene)
 		goto SPACE_RENDER_BUFFER_SWAP;
 
-	mat4x4_apply_transform(pace->viewMatrix, pace->cameraTransform);
-	pace->viewMatrix[3][0] = -(pace->cameraTransform.px * pace->right[0] + pace->cameraTransform.py * pace->right[1] + pace->cameraTransform.pz * pace->right[2]);
-	pace->viewMatrix[3][1] = -(pace->cameraTransform.px * pace->up[0] + pace->cameraTransform.py * pace->up[1] + pace->cameraTransform.pz * pace->up[2]);
-	pace->viewMatrix[3][2] = -(pace->cameraTransform.px * pace->forward[0] + pace->cameraTransform.py * pace->forward[1] + pace->cameraTransform.pz * pace->forward[2]);
+	TransformCamera(pace->currentCamera);
 
 	for(int i = 0; i < pace->loadedScene->numMeshes; ++i)
 	{
 		EnableShader(pace->loadedScene->meshes[i]->shader);
 		DrawMesh(pace->loadedScene->meshes[i]);
-		glUniformMatrix4fv(pace->loadedScene->meshes[i]->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)pace->viewMatrix);
-		glUniformMatrix4fv(pace->loadedScene->meshes[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)pace->projectionMatrix);
+		glUniformMatrix4fv(pace->loadedScene->meshes[i]->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)pace->currentCamera->transform.transformMatrix);
+		if(pace->currentCamera->viewMode == PAProjection)
+			glUniformMatrix4fv(pace->loadedScene->meshes[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)pace->currentCamera->projectionMatrix);
+		else
+			glUniformMatrix4fv(pace->loadedScene->meshes[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)pace->currentCamera->orthoMatrix);
 	}
 
 	glClear(GL_DEPTH_BUFFER_BIT);
@@ -179,11 +159,11 @@ void UpdateWindowContent(PACE *pace)
 	{
 		EnableShader(pace->loadedScene->ui[i]->shader);
 		DrawMesh(pace->loadedScene->ui[i]);
-		glUniformMatrix4fv(pace->loadedScene->ui[i]->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)pace->identMatrix);
-		glUniformMatrix4fv(pace->loadedScene->ui[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)pace->orthoMatrix);
+		glUniformMatrix4fv(pace->loadedScene->ui[i]->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)pace->currentCamera->identMatrix);
+		glUniformMatrix4fv(pace->loadedScene->ui[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)pace->currentCamera->orthoMatrix);
 	}
 
-	glFlush();
+/*	glFlush();
 	glFinish();
 
 	PickObjects(pace->papickingTexture, pace->identMatrix, pace->orthoMatrix, pace->loadedScene->ui, pace->loadedScene->numUIs);
@@ -197,7 +177,7 @@ void UpdateWindowContent(PACE *pace)
 				printf("Read object: %d\n", pace->papickingTexture->pixelInfo.objectID);
 		}
 	}
-
+*/
 	//check events and swap buffers
 SPACE_RENDER_BUFFER_SWAP:
 	glfwSwapBuffers(pace->window);
@@ -205,9 +185,7 @@ SPACE_RENDER_BUFFER_SWAP:
 
 void ClearPACE(PACE *pace)
 {
-	for(int i = 0; i < pace->numScenes; ++i)
-		PurgePAScene(&pace->scenes[i], 1);
-	free(pace->scenes);
+	PurgePAScene(pace->loadedScene, 1);
 	free(pace);
 
 	glfwTerminate();

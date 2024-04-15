@@ -8,9 +8,16 @@
 #include <stdint.h>
 #include <linmath.h>
 
+enum PAViewMode
+{
+	PAProjection,
+	PAOrtho
+};
+
 extern void (*PACE_key_callback)(int, int, int, int);
 extern void (*PACE_mouse_moved_callback)(double, double);
 
+typedef struct PACamera PACamera;
 typedef struct PACE PACE;
 typedef struct PAMesh PAMesh;
 typedef struct PAShader PAShader;
@@ -37,7 +44,7 @@ PAPickingTexture* CreatePickingTexture(uint32_t width, uint32_t height);
 void EnablePickingTexture(PAPickingTexture *papickingTexture);
 void DisablePickingTexture(PAPickingTexture *papickingTexture);
 void ReadPixelInfo(PAPickingTexture *papickingTexture, uint32_t x, uint32_t y);
-void PickObjects(PAPickingTexture *papickingTexture, mat4x4 viewMatrix, mat4x4 perspectiveMatrix, PAMesh **meshes, int numMeshes);
+void PickObjects(PACamera *camera, PAPickingTexture *papickingTexture, PAMesh **meshes, int numMeshes);
 
 typedef struct PATransform
 {
@@ -76,24 +83,15 @@ LINMATH_H_FUNC void mat4x4_apply_transform(mat4x4 M, PATransform transform)
 	mat4x4_mul(M, M, scale);
 }
 
-struct PACE
+struct PACamera
 {
-	GLFWwindow *window;
-	int running;
+	PATransform transform;
 
-	PAScene *loadedScene;
-	PAScene *scenes;
-	uint16_t numScenes;
-	uint16_t allocScenes;
+	enum PAViewMode viewMode;
 
-	PAShader *defaultShader;
 	mat4x4 identMatrix;
-	mat4x4 viewMatrix;
 	mat4x4 projectionMatrix;
 	mat4x4 orthoMatrix;
-
-	PATransform cameraTransform;
-	PAPickingTexture *papickingTexture;
 
 	float nearPlane;
 	float farPlane;
@@ -103,7 +101,23 @@ struct PACE
 	vec3 up;
 };
 
-PACE* CreatePACE(uint32_t width, uint32_t height, float nearPlane, float farPlane);
+PACamera* CreateCamera(uint32_t width, uint32_t height, float nearPlane, float farPlane);
+void RescaleCamera(PACamera *camera, uint32_t width, uint32_t height);
+void TransformCamera(PACamera *camera);
+
+struct PACE
+{
+	GLFWwindow *window;
+	int running;
+
+	PAScene *loadedScene;
+
+	PACamera *currentCamera;
+
+	PAPickingTexture *papickingTexture;
+};
+
+PACE* CreatePACE(uint32_t width, uint32_t height, PACamera *camera);
 void PACESetKeyCallback(void (*func)(int, int, int, int));
 void PACESetMouseMovedCallback(void (*func)(double, double));
 void PACE_hide_cursor(PACE *pace);

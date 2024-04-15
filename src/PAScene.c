@@ -95,10 +95,9 @@ int RemoveMeshFromScene(PAScene *scene, int index, PAMesh *mesh)
 
 void PurgePAScene(PAScene *scene, int purgeMeshes)
 {
-	if(purgeMeshes)
+/*	if(purgeMeshes)
 		for(int i = 0; i < scene->numMeshes; ++i)
 			PurgePAMesh(scene->meshes[i]);
-
-	free(scene->meshes);
+*/
 	free(scene);
 }

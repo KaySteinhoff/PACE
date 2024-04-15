@@ -86,7 +86,7 @@ void DestroyPickingTexture(PAPickingTexture *papickingTexture)
 		glDeleteTextures(1, &papickingTexture->depthTexture);
 }
 
-void PickObjects(PAPickingTexture *papickingTexture, mat4x4 viewMatrix, mat4x4 perspectiveMatrix, PAMesh **meshes, int numMeshes)
+void PickObjects(PACamera *camera, PAPickingTexture *papickingTexture, PAMesh **meshes, int numMeshes)
 {
 	EnablePickingTexture(papickingTexture);
 
@@ -97,10 +97,14 @@ void PickObjects(PAPickingTexture *papickingTexture, mat4x4 viewMatrix, mat4x4 p
 	for(int i = 0; i < numMeshes; ++i)
 	{
 		mat4x4_apply_transform(meshes[i]->transform.transformMatrix, meshes[i]->transform);
+
 		glUniform1ui(glGetUniformLocation(papickingTexture->pickingShader->ID, "gObjectIndex"), i + 1);
 		glUniformMatrix4fv(papickingTexture->pickingShader->modelLocation, 1, GL_FALSE, (const GLfloat*)meshes[i]->transform.transformMatrix);
-		glUniformMatrix4fv(papickingTexture->pickingShader->viewLocation, 1, GL_FALSE, (const GLfloat*)viewMatrix);
-		glUniformMatrix4fv(papickingTexture->pickingShader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)perspectiveMatrix);
+		glUniformMatrix4fv(papickingTexture->pickingShader->viewLocation, 1, GL_FALSE, (const GLfloat*)camera->transform.transformMatrix);
+		if(camera->viewMode == PAProjection)
+			glUniformMatrix4fv(papickingTexture->pickingShader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)camera->projectionMatrix);
+		else
+			glUniformMatrix4fv(papickingTexture->pickingShader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)camera->orthoMatrix);
 
 		glBindVertexArray(meshes[i]->vao);
 		glDrawArrays(GL_TRIANGLES, 0, meshes[i]->numFaces);
