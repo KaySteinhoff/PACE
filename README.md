@@ -17,13 +17,21 @@ etc.
 In total the (current) design hierarchy looks like this:
 
 PACE (PACE instance)
+
 ├Current Camera (PACamera instance)
+
 │└Transform (PATransform instance)
+
 └Loaded Scene (PAScene instance)
+
  ├Meshes (PAMesh instances)
+
  │├Transform (PATransform instance)
+
  │└Shader (PAShader instance)
+
  │ └Texture (PATexture instance)
+
  └UI elements (PAUI(technically PAMesh) instances)
 
 Although the engine has a data oriented approach it isn't totally data oriented. All children and the 
