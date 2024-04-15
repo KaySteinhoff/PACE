@@ -2,12 +2,12 @@
 
 #define INVALID_UNIFORM_LOCATION 0xffffffff
 
-void PAShader::EnableShader(PAShader *shader)
+void EnableShader(PAShader *shader)
 {
 	glUseProgram(shader->ID);
 }
 
-PAShader* PAShader::LoadShaderFromSource(char *vertexSource, char *fragmentSource)
+PAShader* LoadShaderFromSource(char *vertexSource, char *fragmentSource)
 {
 	FILE *source = fopen(vertexSource, "r");
 
@@ -59,16 +59,13 @@ int LogShaderCompile(GLuint shaderID)
 	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success);
 
 	glGetShaderInfoLog(shaderID, 512, NULL, log);
-	printf("Shader compilation log: %s\n", log);
-	if(success)
-		return success;
+	if(!success)
+		printf("ERROR: SESHADER_COMPILATION_FAILED\nShader compilation log: %s\n", log);
 
-	printf("ERROR: SESHADER_COMPILATION_FAILED\n");
-
-	return 0;
+	return success;
 }
 
-int PAShader::SetInt(PAShader *shader, const char *name, int value)
+int SetInt(PAShader *shader, const char *name, int value)
 {
 	GLint location = glGetUniformLocation(shader->ID, name);
 
@@ -79,7 +76,7 @@ int PAShader::SetInt(PAShader *shader, const char *name, int value)
 	return 1;
 }
 
-int PAShader::SetFloat(PAShader *shader, const char *name, float value)
+int SetFloat(PAShader *shader, const char *name, float value)
 {
 	GLint location = glGetUniformLocation(shader->ID, name);
 
@@ -90,7 +87,7 @@ int PAShader::SetFloat(PAShader *shader, const char *name, float value)
 	return 1;
 }
 
-PAShader* PAShader::CompileShader(const char *vertexShader, const char *fragmentShader)
+PAShader* CompileShader(const char *vertexShader, const char *fragmentShader)
 {
 	PAShader *shader = malloc(sizeof(PAShader));
 
@@ -133,7 +130,6 @@ Abort_Shader_Comp:
 		goto Abort_Shader_Comp;
 	}
 
-//	glUseProgram(shader->ID);
 	glDeleteShader(shader->vertexShader);
 	glDeleteShader(shader->fragmentShader);
 

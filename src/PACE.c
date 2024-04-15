@@ -148,6 +148,7 @@ void PollPACE(PACE *pace)
 	if(!pace->running)
 		return;
 	//Poll player inputs
+	glfwPollEvents();
 
 	//Clear to background color
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -159,18 +160,10 @@ void UpdateWindowContent(PACE *pace)
 	if(!pace->loadedScene)
 		goto SPACE_RENDER_BUFFER_SWAP;
 
-/*	PickObjects(space, space->sepickingTexture);
-
-	ReadPixelInfo(space->sepickingTexture, 400, 300);
-	if(space->sepickingTexture->pixelInfo.objectID != 0)
-		printf("Read object: %d\n", space->sepickingTexture->pixelInfo.objectID);
-*/
 	mat4x4_apply_transform(pace->viewMatrix, pace->cameraTransform);
 	pace->viewMatrix[3][0] = -(pace->cameraTransform.px * pace->right[0] + pace->cameraTransform.py * pace->right[1] + pace->cameraTransform.pz * pace->right[2]);
 	pace->viewMatrix[3][1] = -(pace->cameraTransform.px * pace->up[0] + pace->cameraTransform.py * pace->up[1] + pace->cameraTransform.pz * pace->up[2]);
 	pace->viewMatrix[3][2] = -(pace->cameraTransform.px * pace->forward[0] + pace->cameraTransform.py * pace->forward[1] + pace->cameraTransform.pz * pace->forward[2]);
-//	mat4x4_identity(pace->viewMatrix);
-//	mat4x4_look_at(pace->viewMatrix, (vec3){pace->cameraTransform.px, pace->cameraTransform.py, pace->cameraTransform.pz}, (vec3){pace->cameraTransform.px+pace->forward[0], pace->cameraTransform.py+pace->forward[1], pace->cameraTransform.pz+pace->forward[2]}, pace->up);
 
 	for(int i = 0; i < pace->loadedScene->numMeshes; ++i)
 	{
@@ -190,9 +183,23 @@ void UpdateWindowContent(PACE *pace)
 		glUniformMatrix4fv(pace->loadedScene->ui[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)pace->orthoMatrix);
 	}
 
+	glFlush();
+	glFinish();
+
+	PickObjects(pace->papickingTexture, pace->identMatrix, pace->orthoMatrix, pace->loadedScene->ui, pace->loadedScene->numUIs);
+
+	for(int y = 0; y < 600; ++y)
+	{
+		for(int x = 0; x < 800; ++x)
+		{
+			ReadPixelInfo(pace->papickingTexture, x, y);
+			if(pace->papickingTexture->pixelInfo.objectID != 0)
+				printf("Read object: %d\n", pace->papickingTexture->pixelInfo.objectID);
+		}
+	}
+
 	//check events and swap buffers
 SPACE_RENDER_BUFFER_SWAP:
-	glfwPollEvents();
 	glfwSwapBuffers(pace->window);
 }
 

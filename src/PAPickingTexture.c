@@ -86,7 +86,7 @@ void DestroyPickingTexture(PAPickingTexture *papickingTexture)
 		glDeleteTextures(1, &papickingTexture->depthTexture);
 }
 
-void PickObjects(PACE *pace, PAPickingTexture *papickingTexture)
+void PickObjects(PAPickingTexture *papickingTexture, mat4x4 viewMatrix, mat4x4 perspectiveMatrix, PAMesh **meshes, int numMeshes)
 {
 	EnablePickingTexture(papickingTexture);
 
@@ -94,20 +94,16 @@ void PickObjects(PACE *pace, PAPickingTexture *papickingTexture)
 
 	glUseProgram(papickingTexture->pickingShader->ID);
 
-	for(int i = 0; i < pace->loadedScene->numMeshes; ++i)
+	for(int i = 0; i < numMeshes; ++i)
 	{
-		mat4x4_apply_transform(pace->loadedScene->meshes[i]->transform.transformMatrix, pace->loadedScene->meshes[i]->transform);
-		if(!SetInt(papickingTexture->pickingShader, "gObjectIndex", i + 1))
-		{
-			printf("Failed to set object id for object i + 1!\n");
-			continue;
-		}
-		glUniformMatrix4fv(papickingTexture->pickingShader->modelLocation, 1, GL_FALSE, (const GLfloat*)pace->loadedScene->meshes[i]->transform.transformMatrix);
-		glUniformMatrix4fv(papickingTexture->pickingShader->viewLocation, 1, GL_FALSE, (const GLfloat*)pace->viewMatrix);
-		glUniformMatrix4fv(papickingTexture->pickingShader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)pace->projectionMatrix);
+		mat4x4_apply_transform(meshes[i]->transform.transformMatrix, meshes[i]->transform);
+		glUniform1ui(glGetUniformLocation(papickingTexture->pickingShader->ID, "gObjectIndex"), i + 1);
+		glUniformMatrix4fv(papickingTexture->pickingShader->modelLocation, 1, GL_FALSE, (const GLfloat*)meshes[i]->transform.transformMatrix);
+		glUniformMatrix4fv(papickingTexture->pickingShader->viewLocation, 1, GL_FALSE, (const GLfloat*)viewMatrix);
+		glUniformMatrix4fv(papickingTexture->pickingShader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)perspectiveMatrix);
 
-		glBindVertexArray(pace->loadedScene->meshes[i]->vao);
-		glDrawArrays(GL_TRIANGLES, 0, pace->loadedScene->meshes[i]->numFaces);
+		glBindVertexArray(meshes[i]->vao);
+		glDrawArrays(GL_TRIANGLES, 0, meshes[i]->numFaces);
 	}
 
 	DisablePickingTexture(papickingTexture);

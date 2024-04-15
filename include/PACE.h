@@ -37,7 +37,7 @@ PAPickingTexture* CreatePickingTexture(uint32_t width, uint32_t height);
 void EnablePickingTexture(PAPickingTexture *papickingTexture);
 void DisablePickingTexture(PAPickingTexture *papickingTexture);
 void ReadPixelInfo(PAPickingTexture *papickingTexture, uint32_t x, uint32_t y);
-void PickObjects(PACE *pace, PAPickingTexture *papickingTexture);
+void PickObjects(PAPickingTexture *papickingTexture, mat4x4 viewMatrix, mat4x4 perspectiveMatrix, PAMesh **meshes, int numMeshes);
 
 typedef struct PATransform
 {

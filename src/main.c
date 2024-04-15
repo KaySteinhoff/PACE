@@ -8,13 +8,14 @@
 
 #define _USE_MATH_DEFINES
 
-//TODO:Implement UI functionality and fix "warping" while moving
+//TODO:Implement UI functionality
 PACE *pace;
 int showCursor = 0;
 float speed = 4231941*0.01, mouseSpeed = 0.001, elapsedTime = 0;
 clock_t start;
 
 int keyPressed = -1;
+int pressed = 0;
 
 void mouse_callback(double x, double y)
 {
@@ -46,6 +47,7 @@ void key_callback(int key, int scancode, int action, int mods)
 		return;
 	}
 	keyPressed = key;
+	pressed = 1;
 //	printf("%d\n", key);
 }
 
@@ -63,7 +65,6 @@ int main(int argc, char **argv)
 	glClearColor(0, 0, 0, 1);
 	PACESetKeyCallback(key_callback);
 	PACESetMouseMovedCallback(mouse_callback);
-//	glfwSetInputMode(pace->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	PACE_hide_cursor(pace);
 
 	PAMesh *skybox = LoadMeshFromFile("skybox.3dpc", LoadShaderFromSource("shaders/skybox.vert", "shaders/skybox.frag"));
@@ -73,15 +74,15 @@ int main(int argc, char **argv)
 	skybox->transform.sz = 255;
 
 	PAMesh *rect = CreateMesh();
-	rect->shader = LoadShaderFromSource("shaders/skybox.vert", "shaders/skybox.frag");
+	rect->shader = LoadShaderFromSource("shaders/default.vert", "shaders/default.frag");
 	rect->shader->texture = LoadTextureFromFile("Test.jpg", GL_RGB, GL_RGB);
 	float rectData[] = {
-		100, 300, 0, 0, 0,
-		400, 300, 0, 1, 0,
-		100, 0, 0, 0, 1,
-		400, 300, 0, 1, 0,
-		100, 0, 0, 0, 1,
-		400, 0, 0, 1, 1
+		350, 350, 0, 0, 0,
+		450, 350, 0, 1, 0,
+		350, 250, 0, 0, 1,
+		450, 350, 0, 1, 0,
+		350, 250, 0, 0, 1,
+		450, 250, 0, 1, 1
 	};
 	rect->vertices = malloc(30*sizeof(float));
 	SetPAMeshVertices(rect, rectData, 30);
@@ -150,7 +151,7 @@ int main(int argc, char **argv)
 
 	PAScene *scene = CreateScene();
 	//Add UI
-//	AddUIToScene(scene, rect);
+	AddUIToScene(scene, rect);
 
 	AddMeshToScene(scene, skybox);
 	AddMeshToScene(scene, mercury);
@@ -162,58 +163,47 @@ int main(int argc, char **argv)
 	AddMeshToScene(scene, uranus);
 	AddMeshToScene(scene, neptune);
 
-//	mercury->transform.px = -230;
 	mercury->transform.pz = -230;
 	mercury->transform.sx = 0.035;
 	mercury->transform.sy = 0.035;
 	mercury->transform.sz = 0.035;
 
-//	venus->transform.px = -230;
 	venus->transform.pz = -197255*0.01;
 	venus->transform.sx = 0.085;
 	venus->transform.sy = 0.085;
 	venus->transform.sz = 0.085;
 
-//	earth->transform.px = -230;
 	earth->transform.pz = -359608*0.01;
 	earth->transform.sx = 0.089;
 	earth->transform.sy = 0.089;
 	earth->transform.sz = 0.089;
 
-// 	mars->transform.px = -230;
 	mars->transform.pz = -666667*0.01;
 	mars->transform.sx = 0.048;
 	mars->transform.sy = 0.048;
 	mars->transform.sz = 0.048;
 
-//	jupiter->transform.px = -230;
 	jupiter->transform.pz = -2825098*0.01;
 
-//	saturn->transform.px = -230;
 	saturn->transform.pz = -5369020*0.01;
 	saturn->transform.sx = 0.84;
 	saturn->transform.sy = 0.84;
 	saturn->transform.sz = 0.84;
 
-//	uranus->transform.px = -230;
 	uranus->transform.pz = -11027843*0.01;
 	uranus->transform.sx = 0.36;
 	uranus->transform.sy = 0.36;
 	uranus->transform.sz = 0.36;
 
-//	neptune->transform.px = -230;
 	neptune->transform.pz = -17408235*0.01;
 	neptune->transform.sx = 0.35;
 	neptune->transform.sy = 0.35;
 	neptune->transform.sz = 0.35;
 
-//	pace->cameraTransform.px = 230;
-//	pace->cameraTransform.pz = -230;
-
 	pace->loadedScene = scene;
 
-	while(pace->running)
-	{
+//	while(pace->running)
+//	{
 		elapsedTime = ((double)clock()-start)/CLOCKS_PER_SEC;
 		start = clock();
 		PollPACE(pace);
@@ -223,6 +213,9 @@ int main(int argc, char **argv)
 		switch(keyPressed)
 		{
 			case 258:
+				if(!pressed)
+					break;
+				pressed = 0;
 				if(showCursor)
 				{
 					PACE_hide_cursor(pace);
@@ -266,7 +259,7 @@ int main(int argc, char **argv)
 
 		//Render shit
 		UpdateWindowContent(pace);
-	}
+//	}
 
 	ClearPACE(pace);
 
