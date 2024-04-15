@@ -163,6 +163,21 @@ void UpdateWindowContent(PACE *pace)
 		glUniformMatrix4fv(pace->loadedScene->ui[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)pace->currentCamera->orthoMatrix);
 	}
 
+/*	glFlush();
+	glFinish();
+
+	PickObjects(pace->papickingTexture, pace->identMatrix, pace->orthoMatrix, pace->loadedScene->ui, pace->loadedScene->numUIs);
+
+	for(int y = 0; y < 600; ++y)
+	{
+		for(int x = 0; x < 800; ++x)
+		{
+			ReadPixelInfo(pace->papickingTexture, x, y);
+			if(pace->papickingTexture->pixelInfo.objectID != 0)
+				printf("Read object: %d\n", pace->papickingTexture->pixelInfo.objectID);
+		}
+	}
+*/
 	//check events and swap buffers
 SPACE_RENDER_BUFFER_SWAP:
 	glfwSwapBuffers(pace->window);

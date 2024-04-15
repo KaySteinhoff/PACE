@@ -97,11 +97,8 @@ void PickObjects(PACamera *camera, PAPickingTexture *papickingTexture, PAMesh **
 	for(int i = 0; i < numMeshes; ++i)
 	{
 		mat4x4_apply_transform(meshes[i]->transform.transformMatrix, meshes[i]->transform);
-		if(!SetInt(papickingTexture->pickingShader, "gObjectIndex", i + 1))
-		{
-			printf("Failed to set object id for object i + 1!\n");
-			continue;
-		}
+
+		glUniform1ui(glGetUniformLocation(papickingTexture->pickingShader->ID, "gObjectIndex"), i + 1);
 		glUniformMatrix4fv(papickingTexture->pickingShader->modelLocation, 1, GL_FALSE, (const GLfloat*)meshes[i]->transform.transformMatrix);
 		glUniformMatrix4fv(papickingTexture->pickingShader->viewLocation, 1, GL_FALSE, (const GLfloat*)camera->transform.transformMatrix);
 		if(camera->viewMode == PAProjection)
