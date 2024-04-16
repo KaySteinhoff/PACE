@@ -12,7 +12,7 @@
 PACamera *camera;
 PACE *pace;
 int showCursor = 0;
-float speed = 4231941*0.01, mouseSpeed = 10, elapsedTime = 0;
+float speed = 4231941*0.01, mouseSpeed = 5, elapsedTime = 0;
 clock_t start;
 
 int keyPressed = -1;
