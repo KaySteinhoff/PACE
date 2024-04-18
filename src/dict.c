@@ -29,8 +29,12 @@ dict* CreateDict(enum dict_size dictAllocatedSize)
 	}
 	
 	for(int i = 0; i < result->size; ++i)
+	{
 		result->entries[i].key = "\0";
-	
+		result->entries[i].value = NULL;
+		result->entries[i].next = NULL;
+	}
+
 	return result;
 }
 

@@ -79,36 +79,14 @@ int main(int argc, char **argv)
 	rect->vertices = malloc(30*sizeof(float));
 	SetPAMeshVertices(rect, rectData, 30);
 
-	PAMesh *spaceship = LoadMeshFromFile("Spaceship.3dpc", LoadShaderFromSource("shaders/default.vert", "shaders/default.frag"));
 	PAMesh *mercury = LoadMeshFromFile("planet.3dpc", LoadShaderFromSource("shaders/default.vert", "shaders/default.frag"));
-
-	PAMesh *venus = CreateMesh();
-	venus->shader = LoadShaderFromSource("shaders/default.vert", "shaders/default.frag");
-	SetPAMeshVertices(venus, mercury->vertices, mercury->numVertices);
-
-	PAMesh *earth = CreateMesh();
-	earth->shader = LoadShaderFromSource("shaders/default.vert", "shaders/default.frag");
-	SetPAMeshVertices(earth, mercury->vertices, mercury->numVertices);
-
-	PAMesh *mars = CreateMesh();
-	mars->shader = LoadShaderFromSource("shaders/default.vert", "shaders/default.frag");
-	SetPAMeshVertices(mars, mercury->vertices, mercury->numVertices);
-
-	PAMesh *jupiter = CreateMesh();
-	jupiter->shader = LoadShaderFromSource("shaders/default.vert", "shaders/default.frag");
-	SetPAMeshVertices(jupiter, mercury->vertices, mercury->numVertices);
-
-	PAMesh *saturn = CreateMesh();
-	saturn->shader = LoadShaderFromSource("shaders/default.vert", "shaders/default.frag");
-	SetPAMeshVertices(saturn, mercury->vertices, mercury->numVertices);
-
-	PAMesh *uranus = CreateMesh();
-	uranus->shader = LoadShaderFromSource("shaders/default.vert", "shaders/default.frag");
-	SetPAMeshVertices(uranus, mercury->vertices, mercury->numVertices);
-
-	PAMesh *neptune = CreateMesh();
-	neptune->shader = LoadShaderFromSource("shaders/default.vert", "shaders/default.frag");
-	SetPAMeshVertices(neptune, mercury->vertices, mercury->numVertices);
+	PAMesh *venus = LoadMeshFromFile("planet.3dpc", LoadShaderFromSource("shaders/default.vert", "shaders/default.frag"));
+	PAMesh *earth = LoadMeshFromFile("planet.3dpc", LoadShaderFromSource("shaders/default.vert", "shaders/default.frag"));
+	PAMesh *mars = LoadMeshFromFile("planet.3dpc", LoadShaderFromSource("shaders/default.vert", "shaders/default.frag"));
+	PAMesh *jupiter = LoadMeshFromFile("planet.3dpc", LoadShaderFromSource("shaders/default.vert", "shaders/default.frag"));
+	PAMesh *saturn = LoadMeshFromFile("planet.3dpc", LoadShaderFromSource("shaders/default.vert", "shaders/default.frag"));
+	PAMesh *uranus = LoadMeshFromFile("planet.3dpc", LoadShaderFromSource("shaders/default.vert", "shaders/default.frag"));
+	PAMesh *neptune = LoadMeshFromFile("planet.3dpc", LoadShaderFromSource("shaders/default.vert", "shaders/default.frag"));
 
 	if(!mercury || !venus || !earth || !mars || !jupiter || !saturn || !uranus || !neptune)
 	{
@@ -116,7 +94,6 @@ int main(int argc, char **argv)
 		return -3;
 	}
 
-	PATexture *shipTex = LoadTextureFromFile("ShipTex.jpg", GL_RGB, GL_RGB);
 	PATexture *mercuryTex = LoadTextureFromFile("mercury.jpg", GL_RGB, GL_RGB);
 	PATexture *venusTex = LoadTextureFromFile("venus.jpg", GL_RGB, GL_RGB);
 	PATexture *earthTex = LoadTextureFromFile("earth.jpg", GL_RGB, GL_RGB);
@@ -130,7 +107,6 @@ int main(int argc, char **argv)
 		printf("Failed to load texture!\n");
 		return -2;
 	}
-	spaceship->shader->texture = shipTex;
 	mercury->shader->texture = mercuryTex;
 	venus->shader->texture = venusTex;
 	earth->shader->texture = earthTex;
@@ -143,7 +119,7 @@ int main(int argc, char **argv)
 
 	PAScene *scene = CreateScene();
 	//Add UI
-	AddUIToScene(scene, rect);
+//	AddUIToScene(scene, rect);
 
 	AddMeshToScene(scene, skybox);
 	AddMeshToScene(scene, mercury);

@@ -1,5 +1,14 @@
 #include <3dpc.h>
 #include <stdlib.h>
+#include <dict.h>
+
+struct meshData
+{
+	int numVertices;
+	float *data;
+};
+
+dict *meshDictionary = NULL;
 
 float* MirrorModel(float *data, int *length, p3dpc header)
 {
@@ -83,6 +92,22 @@ PAMesh* LoadMeshFromFile(const char *path, PAShader *shader)
 		return NULL;
 	mesh->shader = shader;
 
+	if(!meshDictionary)
+		meshDictionary = CreateDict(dict_size_small);
+
+	struct meshData *mData = (struct meshData*)dictGetValue(meshDictionary, (char*)path);
+
+	//File was already loaded once
+	if(mData)
+	{
+		printf("mesh found!\n");
+		EnableShader(shader);
+		SetPAMeshVertices(mesh, mData->data, mData->numVertices);
+
+		return mesh;
+	}
+	printf("mesh not found.\n");
+
 	FILE *fptr = fopen(path, "rb");
 
 	if(!fptr)
@@ -155,6 +180,21 @@ PAMesh* LoadMeshFromFile(const char *path, PAShader *shader)
 	mesh->vertices = data;
 	//Apply data pointer to mesh
 	SetPAMeshVertices(mesh, data, dataLength);
+
+	mData = malloc(sizeof(struct meshData));
+
+	if(!mData)
+	{
+		free(mesh);
+		free(vertices);
+		free(faces);
+		return NULL;
+	}
+
+	mData->numVertices = dataLength;
+	mData->data = data;
+
+	dictAddEntry(meshDictionary, (char*)path, mData);
 
 	return mesh;
 }
