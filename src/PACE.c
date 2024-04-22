@@ -1,7 +1,7 @@
 #include <PACE.h>
 #include <GLFW/glfw3.h>
 
-PACE **paceObjs;
+PACE *instance = NULL;
 int paceObjsNum = 0;
 int paceObjsLen = 1;
 
@@ -12,23 +12,17 @@ void (*PACE_mouse_moved_callback)(double, double);
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
 	glViewport(0, 0, width, height);
-	for(int i = 0; i < paceObjsNum; ++i)
-	{
-		if(paceObjs[i]->window != window)
-			continue;
-		RescaleCamera(paceObjs[i]->currentCamera, width, height);
-		break;
-	}
+	RescaleCamera(instance->currentCamera, width, height);
 }
 
-void PACE_hide_cursor(PACE *pace)
+void PACE_hide_cursor()
 {
-	glfwSetInputMode(pace->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(instance->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
-void PACE_show_cursor(PACE *pace)
+void PACE_show_cursor()
 {
-	glfwSetInputMode(pace->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	glfwSetInputMode(instance->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 void PACE_cursor_position_changed_callback(GLFWwindow *window, double x, double y)
@@ -43,71 +37,58 @@ void PACE_key_press_callback(GLFWwindow *window, int key, int scancode, int acti
 		PACE_key_callback(key, scancode, action, mods);
 }
 
-PACE* CreatePACE(uint32_t width, uint32_t height, PACamera *camera)
+PACE* GetInstance()
 {
-	if(!paceObjs)
-	{
-		paceObjs = malloc(sizeof(PACE*));
-		if(!paceObjs)
-			return NULL;
-	}
+	return instance;
+}
 
-	PACE *pace = malloc(sizeof(PACE));
+PACE* InitPACE(uint32_t width, uint32_t height, PACamera *camera)
+{
+	if(instance)
+		free(instance);
 
-	if(!pace)
+	instance = malloc(sizeof(PACE));
+
+	if(!instance)
 		return NULL;
-
-	paceObjs[paceObjsNum++] = pace;
-	if(paceObjsNum == paceObjsLen)
-	{
-		paceObjsLen = paceObjsLen<<1;
-		PACE **tmp = realloc(paceObjs, paceObjsLen * sizeof(PACE*));
-		if(!tmp)
-		{
-			free(pace);
-			return NULL;
-		}
-		paceObjs = tmp;
-	}
 
 	if(!glfwInit())
 	{
 		printf("Failed to initialize GLFW!\n");
-		paceObjsNum--;
-		free(pace);
+		free(instance);
 		return NULL;
 	}
 
-	pace->window = glfwCreateWindow(width, height, "SpacE", NULL, NULL);
+	instance->window = glfwCreateWindow(width, height, "SpacE", NULL, NULL);
 
-	if(!pace->window)
+	if(!instance->window)
 	{
 		printf("Failed to create window\n");
-		free(pace);
+		free(instance);
 		return NULL;
 	}
 
-	glfwMakeContextCurrent(pace->window);
+	glfwMakeContextCurrent(instance->window);
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 	glViewport(0, 0, width, height);
 
-	glfwSetFramebufferSizeCallback(pace->window, framebuffer_size_callback);
-	glfwSetKeyCallback(pace->window, PACE_key_press_callback);
-	glfwSetCursorPosCallback(pace->window, PACE_cursor_position_changed_callback);
+	glfwSetFramebufferSizeCallback(instance->window, framebuffer_size_callback);
+	glfwSetKeyCallback(instance->window, PACE_key_press_callback);
+	glfwSetCursorPosCallback(instance->window, PACE_cursor_position_changed_callback);
 	glClearColor(0.2, 0.3, 0.3, 1.0);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	printf("%s\n", glewGetErrorString(glewInit()));
 
-	pace->running = 1;
+	instance->running = 1;
 
 	if(!camera)
-		pace->currentCamera = CreateCamera(width, height, 0.1, 1000);
-	else pace->currentCamera = camera;
+		instance->currentCamera = CreateCamera(width, height, 0.1, 1000);
+	else instance->currentCamera = camera;
 
-	return pace;
+	return instance;
 }
 
 void PACESetKeyCallback(void (*func)(int, int, int, int))
@@ -120,11 +101,11 @@ void PACESetMouseMovedCallback(void (*func)(double, double))
 	PACE_mouse_moved_callback = func;
 }
 
-void PollPACE(PACE *pace)
+void PollPACE()
 {
 	//Check if window should close
-	pace->running = !glfwWindowShouldClose(pace->window);
-	if(!pace->running)
+	instance->running = !glfwWindowShouldClose(instance->window);
+	if(!instance->running)
 		return;
 	//Poll player inputs
 	glfwPollEvents();
@@ -133,33 +114,33 @@ void PollPACE(PACE *pace)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void UpdateWindowContent(PACE *pace)
+void UpdateWindowContent()
 {
 	//render shit
-	if(!pace->loadedScene)
+	if(!instance->loadedScene)
 		goto SPACE_RENDER_BUFFER_SWAP;
 
-	TransformCamera(pace->currentCamera);
+	TransformCamera(instance->currentCamera);
 
-	for(int i = 0; i < pace->loadedScene->numMeshes; ++i)
+	for(int i = 0; i < instance->loadedScene->numMeshes; ++i)
 	{
-		EnableShader(pace->loadedScene->meshes[i]->shader);
-		DrawMesh(pace->loadedScene->meshes[i]);
-		glUniformMatrix4fv(pace->loadedScene->meshes[i]->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)pace->currentCamera->transform.transformMatrix);
-		if(pace->currentCamera->viewMode == PAProjection)
-			glUniformMatrix4fv(pace->loadedScene->meshes[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)pace->currentCamera->projectionMatrix);
+		EnableShader(instance->loadedScene->meshes[i]->shader);
+		DrawMesh(instance->loadedScene->meshes[i]);
+		glUniformMatrix4fv(instance->loadedScene->meshes[i]->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->transform.transformMatrix);
+		if(instance->currentCamera->viewMode == PAProjection)
+			glUniformMatrix4fv(instance->loadedScene->meshes[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->projectionMatrix);
 		else
-			glUniformMatrix4fv(pace->loadedScene->meshes[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)pace->currentCamera->orthoMatrix);
+			glUniformMatrix4fv(instance->loadedScene->meshes[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->orthoMatrix);
 	}
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	for(int i = 0; i < pace->loadedScene->numUIs; ++i)
+	for(int i = 0; i < instance->loadedScene->numUIs; ++i)
 	{
-		EnableShader(pace->loadedScene->ui[i]->shader);
-		DrawMesh(pace->loadedScene->ui[i]);
-		glUniformMatrix4fv(pace->loadedScene->ui[i]->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)pace->currentCamera->identMatrix);
-		glUniformMatrix4fv(pace->loadedScene->ui[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)pace->currentCamera->orthoMatrix);
+		EnableShader(instance->loadedScene->ui[i]->shader);
+		DrawMesh(instance->loadedScene->ui[i]);
+		glUniformMatrix4fv(instance->loadedScene->ui[i]->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->identMatrix);
+		glUniformMatrix4fv(instance->loadedScene->ui[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->orthoMatrix);
 	}
 
 /*	glFlush();
@@ -179,13 +160,13 @@ void UpdateWindowContent(PACE *pace)
 */
 	//check events and swap buffers
 SPACE_RENDER_BUFFER_SWAP:
-	glfwSwapBuffers(pace->window);
+	glfwSwapBuffers(instance->window);
 }
 
-void ClearPACE(PACE *pace)
+void ClearPACE()
 {
-	PurgePAScene(pace->loadedScene, 1);
-	free(pace);
+	PurgePAScene(instance->loadedScene, 1);
+	free(instance);
 
 	glfwTerminate();
 }
