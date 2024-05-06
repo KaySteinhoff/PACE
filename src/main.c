@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <PACE.h>
+#include <PACEExtentions.h>
 #include <math.h>
 #include <3dpc.h>
 #include <time.h>
@@ -43,9 +44,17 @@ void key_callback(int key, int scancode, int action, int mods)
 
 int main(int argc, char **argv)
 {
+	PAExtention *testExt = LoadExtention("./ext.so");
+
+	if(!testExt)
+	{
+		printf("Failed to load extention!\n");
+		return 0;
+	}
+
 	camera = CreateCamera(800, 600, 0.1, 100000);
 
-	pace = CreatePACE(800, 600, camera);
+	pace = InitPACE(800, 600, camera);
 
 	if(!pace)
 	{
@@ -170,11 +179,13 @@ int main(int argc, char **argv)
 
 	pace->loadedScene = scene;
 
+	testExt->setup();
+
 	while(pace->running)
 	{
 		elapsedTime = ((double)clock()-start)/CLOCKS_PER_SEC;
 		start = clock();
-		PollPACE(pace);
+		PollPACE();
 		float time = glfwGetTime()/2;
 
 		//Update shit
@@ -186,11 +197,11 @@ int main(int argc, char **argv)
 				pressed = 0;
 				if(showCursor)
 				{
-					PACE_hide_cursor(pace);
+					PACE_hide_cursor();
 					showCursor = 0;
 					break;
 				}
-				PACE_show_cursor(pace);
+				PACE_show_cursor();
 				showCursor = 1;
 				break;
 			case 'W':
@@ -226,10 +237,11 @@ int main(int argc, char **argv)
 		neptune->transform.ry = time;
 
 		//Render shit
-		UpdateWindowContent(pace);
+		UpdateWindowContent();
+		testExt->update();
 	}
 
-	ClearPACE(pace);
+	ClearPACE();
 
 	return 0;
 }

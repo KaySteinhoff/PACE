@@ -128,14 +128,15 @@ struct PACE
 	PAPickingTexture *papickingTexture;
 };
 
-PACE* CreatePACE(uint32_t width, uint32_t height, PACamera *camera);
+PACE* GetInstance();
+PACE* InitPACE(uint32_t width, uint32_t height, PACamera *camera);
 void PACESetKeyCallback(void (*func)(int, int, int, int));
 void PACESetMouseMovedCallback(void (*func)(double, double));
-void PACE_hide_cursor(PACE *pace);
-void PACE_show_cursor(PACE *pace);
+void PACE_hide_cursor();
+void PACE_show_cursor();
 void PollPACE();
-void UpdateWindowContent(PACE *pace);
-void ClearPACE(PACE *pace);
+void UpdateWindowContent();
+void ClearPACE();
 
 struct PAScene
 {
