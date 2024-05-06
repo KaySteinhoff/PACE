@@ -44,14 +44,14 @@ void key_callback(int key, int scancode, int action, int mods)
 
 int main(int argc, char **argv)
 {
-	PAExtention *testExt = LoadExtention("./ext.so");
+//	PAExtention *testExt = LoadExtention("./ext.so");
 
-	if(!testExt)
+/*	if(!testExt)
 	{
 		printf("Failed to load extention!\n");
 		return 0;
 	}
-
+*/
 	camera = CreateCamera(800, 600, 0.1, 100000);
 
 	pace = InitPACE(800, 600, camera);
@@ -179,7 +179,7 @@ int main(int argc, char **argv)
 
 	pace->loadedScene = scene;
 
-	testExt->setup();
+//	testExt->setup();
 
 	while(pace->running)
 	{
@@ -238,7 +238,7 @@ int main(int argc, char **argv)
 
 		//Render shit
 		UpdateWindowContent();
-		testExt->update();
+//		testExt->update();
 	}
 
 	ClearPACE();
