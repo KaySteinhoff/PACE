@@ -1,5 +1,5 @@
-#ifndef PACE_ENGINE
-#define PACE_ENGINE
+#ifndef PACE_ENGINE_H
+#define PACE_ENGINE_H
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <linmath.h>
+#include <ft2build.h>
 
 #define _USE_MATH_DEFINES
 
@@ -175,6 +176,43 @@ PAMesh* CreateMesh();
 int SetPAMeshVertices(PAMesh *mesh, float *vertices, uint32_t numVertices);
 void DrawMesh(PAMesh *mesh);
 void PurgePAMesh(PAMesh *mesh);
+
+#ifndef FT_FREETYPE_H
+#define FT_FREETYPE_H
+typedef struct PAFont
+{
+	FT_Library fl;
+	FT_Face ff;
+	FT_GlyphSlot fg;
+
+	struct Character
+	{
+		GLuint texture;
+		float sx, sy;
+		float bx, by;
+		unsigned int advance;
+	}*chars;
+}PAFont;
+
+int LoadFont(const char *path, const char *key);
+
+typedef struct PAText
+{
+	GLuint texUniform;
+	GLuint colorUniform;
+	GLuint coord_uniform;
+
+	PAShader *shader;
+
+	GLfloat color[3];
+
+	int fontSize;
+
+	const char *text;
+	int x, y;
+	int width, height;
+}PAText;
+#endif
 
 struct PATexture
 {
