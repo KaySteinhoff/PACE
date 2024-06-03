@@ -1,5 +1,5 @@
-#ifndef PACE_ENGINE
-#define PACE_ENGINE
+#ifndef PACE_ENGINE_H
+#define PACE_ENGINE_H
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <linmath.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 #define _USE_MATH_DEFINES
 
@@ -34,7 +36,6 @@ static Mouse mouse;
 typedef struct PACamera PACamera;
 typedef struct PACE PACE;
 typedef struct PAMesh PAMesh;
-typedef struct PAUI PAUI;
 typedef struct PAShader PAShader;
 typedef struct PATexture PATexture;
 typedef struct PAScene PAScene;
@@ -156,7 +157,7 @@ void ClearPACE();
 
 struct PAScene
 {
-	PAUI **ui;
+	PAMesh **ui;
 	PAMesh **meshes;
 	int numUIs;
 	int numMeshes;
@@ -166,7 +167,6 @@ struct PAScene
 
 PAScene* CreateScene();
 int AddMeshToScene(PAScene *scene, PAMesh *mesh);
-int AddUIToScene(PAScene *scene, PAUI *ui);
 int RemoveMeshFromScene(PAScene *scene, int index, PAMesh *mesh);
 void PurgePAScene(PAScene *scene, int purgeMeshes);
 
@@ -192,24 +192,7 @@ int SetPAMeshVertices(PAMesh *mesh, float *vertices, uint32_t numVertices);
 void DrawMesh(PAMesh *mesh);
 void PurgePAMesh(PAMesh *mesh);
 
-typedef void (*OnClickCallback)(struct PAUI *obj);
-
-struct PAUI
-{
-	PAMesh *mesh;
-
-	int32_t x;
-	int32_t y;
-	int32_t width;
-	int32_t height;
-
-	OnClickCallback *callbacks;
-	int numCallbacks;
-};
-
-PAUI* CreatePAUI(int32_t x, int32_t y, int32_t width, int32_t height);
-
-/*struct PAText
+typedef struct PAFont
 {
 	FT_Library fl;
 	FT_Face ff;
@@ -222,14 +205,27 @@ PAUI* CreatePAUI(int32_t x, int32_t y, int32_t width, int32_t height);
 		float bx, by;
 		uint32_t advance;
 	}*chars;
+}PAFont;
+
+int LoadFont(const char *path, const char *key);
+
+typedef struct PAText
+{
+	GLuint texUniform;
+	GLuint colorUniform;
+	GLuint coord_uniform;
+
+	PAShader *shader;
+
+	GLfloat color[3];
+
+	int fontSize;
 
 	const char *text;
 	int x, y;
 	int width, height;
-};
+}PAText;
 
-PAText* CreatePAText(const char *fontPath, int fontSize, const char *text);
-*/
 struct PATexture
 {
 	GLuint textureID;

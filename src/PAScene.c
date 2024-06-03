@@ -48,7 +48,7 @@ int AddMeshToScene(PAScene *scene, PAMesh *mesh)
 	return 1;
 }
 
-int AddUIToScene(PAScene *scene, PAUI *ui)
+/*int AddUIToScene(PAScene *scene, PAUI *ui)
 {
 	scene->ui[scene->numUIs++] = ui;
 
@@ -63,7 +63,7 @@ int AddUIToScene(PAScene *scene, PAUI *ui)
 	scene->allocUIs = scene->allocUIs << 1;
 
 	return 1;
-}
+}*/
 
 int RemoveMeshFromScene(PAScene *scene, int index, PAMesh *mesh)
 {

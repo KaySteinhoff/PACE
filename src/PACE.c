@@ -11,14 +11,6 @@ void (*PACE_mouse_moved_callback)(double, double);
 
 void PACE_left_mouse_press()
 {
-	for(int i = 0; i < instance->loadedScene->numUIs; ++i)
-	{
-		PAUI *curr = instance->loadedScene->ui[i];
-		if(mouse.x >= curr->x && mouse.y >= curr->y && mouse.x <= curr->x+curr->width && mouse.y <= curr->y+curr->height)
-			for(int j = 0; j < curr->numCallbacks; ++j)
-				if(curr->callbacks[i])
-					curr->callbacks[i](curr);
-	}
 }
 void PACE_left_mouse_release() { }
 void PACE_right_mouse_press() { }
@@ -172,10 +164,10 @@ void UpdateWindowContent()
 
 	for(int i = 0; i < instance->loadedScene->numUIs; ++i)
 	{
-		EnableShader(instance->loadedScene->ui[i]->mesh->shader);
-		DrawMesh(instance->loadedScene->ui[i]->mesh);
-		glUniformMatrix4fv(instance->loadedScene->ui[i]->mesh->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->identMatrix);
-		glUniformMatrix4fv(instance->loadedScene->ui[i]->mesh->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->uiMatrix);
+		EnableShader(instance->loadedScene->ui[i]->shader);
+		DrawMesh(instance->loadedScene->ui[i]);
+		glUniformMatrix4fv(instance->loadedScene->ui[i]->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->identMatrix);
+		glUniformMatrix4fv(instance->loadedScene->ui[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->uiMatrix);
 	}
 
 /*	glFlush();
