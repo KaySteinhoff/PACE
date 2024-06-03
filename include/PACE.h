@@ -207,24 +207,28 @@ typedef struct PAFont
 	}*chars;
 }PAFont;
 
-int LoadFont(const char *path, const char *key);
+PAFont* LoadFont(const char *path, const char *key);
 
 typedef struct PAText
 {
-	GLuint texUniform;
 	GLuint colorUniform;
-	GLuint coord_uniform;
 
 	PAShader *shader;
 
 	GLfloat color[3];
+	GLuint vao;
 
+	PAFont *font;
 	int fontSize;
 
 	const char *text;
 	int x, y;
 	int width, height;
 }PAText;
+
+PAText* CreateText(int x, int y, const char *text, int fontSize, PAFont *font);
+void SetTextColor(PAText *obj, GLfloat r, GLfloat g, GLfloat b);
+void DrawText(PAText *obj);
 
 struct PATexture
 {

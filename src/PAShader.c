@@ -137,8 +137,12 @@ Abort_Shader_Comp:
 	shader->viewLocation = glGetUniformLocation(shader->ID, "view");
 	shader->perspectiveLocation = glGetUniformLocation(shader->ID, "perspective");
 
-	if(shader->modelLocation == INVALID_UNIFORM_LOCATION || shader->viewLocation == INVALID_UNIFORM_LOCATION || shader->perspectiveLocation == INVALID_UNIFORM_LOCATION)
-		printf("Failed to find matrix location\n");
+	if(shader->modelLocation == INVALID_UNIFORM_LOCATION)
+		printf("Failed to find model matrix location\n");
+	if(shader->viewLocation == INVALID_UNIFORM_LOCATION)
+		printf("Failed to find view matrix location\n");
+	if(shader->perspectiveLocation == INVALID_UNIFORM_LOCATION)
+		printf("Failed to find perspective matrix location\n");
 
 	shader->texture = NULL;
 	return shader;

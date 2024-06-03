@@ -115,6 +115,9 @@ PACE* InitPACE(uint32_t width, uint32_t height, PACamera *camera)
 		instance->currentCamera = CreateCamera(width, height, 0.1, 1000);
 	else instance->currentCamera = camera;
 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	return instance;
 }
 
@@ -130,6 +133,7 @@ void PACESetMouseMovedCallback(void (*func)(double, double))
 
 void PollPACE()
 {
+	glfwSwapBuffers(instance->window);
 	//Check if window should close
 	instance->running = !glfwWindowShouldClose(instance->window);
 	if(!instance->running)
@@ -145,7 +149,7 @@ void UpdateWindowContent()
 {
 	//render shit
 	if(!instance->loadedScene)
-		goto SPACE_RENDER_BUFFER_SWAP;
+		return;
 
 	TransformCamera(instance->currentCamera);
 
@@ -186,8 +190,7 @@ void UpdateWindowContent()
 	}
 */
 	//check events and swap buffers
-SPACE_RENDER_BUFFER_SWAP:
-	glfwSwapBuffers(instance->window);
+//SPACE_RENDER_BUFFER_SWAP:
 }
 
 void ClearPACE()
