@@ -44,14 +44,8 @@ void key_callback(int key, int scancode, int action, int mods)
 
 int main(int argc, char **argv)
 {
-//	PAExtention *testExt = LoadExtention("./ext.so");
+	mouse.x = 0;
 
-/*	if(!testExt)
-	{
-		printf("Failed to load extention!\n");
-		return 0;
-	}
-*/
 	camera = CreateCamera(800, 600, 0.1, 100000);
 
 	pace = InitPACE(800, 600, camera);

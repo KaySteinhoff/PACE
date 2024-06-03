@@ -19,9 +19,22 @@ enum PAViewMode
 extern void (*PACE_key_callback)(int, int, int, int);
 extern void (*PACE_mouse_moved_callback)(double, double);
 
+typedef struct Mouse
+{
+	int32_t x;
+	int32_t y;
+
+	int button;
+	int action;
+	int mods;
+}Mouse;
+
+static Mouse mouse;
+
 typedef struct PACamera PACamera;
 typedef struct PACE PACE;
 typedef struct PAMesh PAMesh;
+typedef struct PAUI PAUI;
 typedef struct PAShader PAShader;
 typedef struct PATexture PATexture;
 typedef struct PAScene PAScene;
@@ -50,6 +63,8 @@ void PickObjects(PACamera *camera, PAPickingTexture *papickingTexture, PAMesh **
 
 typedef struct PATransform
 {
+	struct PATransform *parent;
+
 	float px;
 	float py;
 	float pz;
@@ -69,7 +84,7 @@ typedef struct PATransform
 	mat4x4 transformMatrix;
 }PATransform;
 
-#define DEFAULT_TRANSFORM(T) PATransform T = {.px = 0, .py = 0, .pz = 0, .rx = 0, .ry = 0, .rz = 0, .sx = 1, .sy = 1, .sz = 1, .right[0] = 1, .right[1] = 0, .right[2] = 0, .up[0] = 0, .up[1] = 1, .up[2] = 0, .forward[0] = 0, .forward[1] = 0, .forward[2] = 1}
+#define DEFAULT_TRANSFORM(T) PATransform T = {.parent = NULL, .px = 0, .py = 0, .pz = 0, .rx = 0, .ry = 0, .rz = 0, .sx = 1, .sy = 1, .sz = 1, .right[0] = 1, .right[1] = 0, .right[2] = 0, .up[0] = 0, .up[1] = 1, .up[2] = 0, .forward[0] = 0, .forward[1] = 0, .forward[2] = 1}
 
 LINMATH_H_FUNC void mat4x4_apply_transform(mat4x4 M, PATransform *transform)
 {
@@ -106,6 +121,7 @@ struct PACamera
 
 	mat4x4 identMatrix;
 	mat4x4 projectionMatrix;
+	mat4x4 uiMatrix;
 	mat4x4 orthoMatrix;
 
 	float nearPlane;
@@ -140,7 +156,7 @@ void ClearPACE();
 
 struct PAScene
 {
-	PAMesh **ui;
+	PAUI **ui;
 	PAMesh **meshes;
 	int numUIs;
 	int numMeshes;
@@ -150,7 +166,7 @@ struct PAScene
 
 PAScene* CreateScene();
 int AddMeshToScene(PAScene *scene, PAMesh *mesh);
-int AddUIToScene(PAScene *scene, PAMesh *ui);
+int AddUIToScene(PAScene *scene, PAUI *ui);
 int RemoveMeshFromScene(PAScene *scene, int index, PAMesh *mesh);
 void PurgePAScene(PAScene *scene, int purgeMeshes);
 
@@ -176,6 +192,44 @@ int SetPAMeshVertices(PAMesh *mesh, float *vertices, uint32_t numVertices);
 void DrawMesh(PAMesh *mesh);
 void PurgePAMesh(PAMesh *mesh);
 
+typedef void (*OnClickCallback)(struct PAUI *obj);
+
+struct PAUI
+{
+	PAMesh *mesh;
+
+	int32_t x;
+	int32_t y;
+	int32_t width;
+	int32_t height;
+
+	OnClickCallback *callbacks;
+	int numCallbacks;
+};
+
+PAUI* CreatePAUI(int32_t x, int32_t y, int32_t width, int32_t height);
+
+/*struct PAText
+{
+	FT_Library fl;
+	FT_Face ff;
+	FT_GlyphSlot fg;
+
+	struct Character
+	{
+		GLuint texture;
+		float sx, sy;
+		float bx, by;
+		uint32_t advance;
+	}*chars;
+
+	const char *text;
+	int x, y;
+	int width, height;
+};
+
+PAText* CreatePAText(const char *fontPath, int fontSize, const char *text);
+*/
 struct PATexture
 {
 	GLuint textureID;

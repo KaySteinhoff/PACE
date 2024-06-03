@@ -48,7 +48,7 @@ int AddMeshToScene(PAScene *scene, PAMesh *mesh)
 	return 1;
 }
 
-int AddUIToScene(PAScene *scene, PAMesh *ui)
+int AddUIToScene(PAScene *scene, PAUI *ui)
 {
 	scene->ui[scene->numUIs++] = ui;
 

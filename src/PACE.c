@@ -9,6 +9,37 @@ void (*PACE_key_callback)(int, int, int, int);
 
 void (*PACE_mouse_moved_callback)(double, double);
 
+void PACE_left_mouse_press()
+{
+	for(int i = 0; i < instance->loadedScene->numUIs; ++i)
+	{
+		PAUI *curr = instance->loadedScene->ui[i];
+		if(mouse.x >= curr->x && mouse.y >= curr->y && mouse.x <= curr->x+curr->width && mouse.y <= curr->y+curr->height)
+			for(int j = 0; j < curr->numCallbacks; ++j)
+				if(curr->callbacks[i])
+					curr->callbacks[i](curr);
+	}
+}
+void PACE_left_mouse_release() { }
+void PACE_right_mouse_press() { }
+void PACE_right_mouse_release() { }
+
+void PACE_mouse_button_callback(GLFWwindow *win, int button, int action, int mods)
+{
+	mouse.button = button;
+	mouse.action = action;
+	mouse.mods = mods;
+
+	if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+		PACE_left_mouse_press();
+	if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+		PACE_left_mouse_release();
+	if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+		PACE_right_mouse_press();
+	if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
+		PACE_right_mouse_release();
+}
+
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
 	glViewport(0, 0, width, height);
@@ -27,6 +58,9 @@ void PACE_show_cursor()
 
 void PACE_cursor_position_changed_callback(GLFWwindow *window, double x, double y)
 {
+	mouse.x = (int32_t)x;
+	mouse.y = (int32_t)y;
+
 	if(PACE_mouse_moved_callback)
 		PACE_mouse_moved_callback(x, y);
 }
@@ -77,6 +111,7 @@ PACE* InitPACE(uint32_t width, uint32_t height, PACamera *camera)
 	glfwSetFramebufferSizeCallback(instance->window, framebuffer_size_callback);
 	glfwSetKeyCallback(instance->window, PACE_key_press_callback);
 	glfwSetCursorPosCallback(instance->window, PACE_cursor_position_changed_callback);
+	glfwSetMouseButtonCallback(instance->window, PACE_mouse_button_callback);
 	glClearColor(0.2, 0.3, 0.3, 1.0);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -137,10 +172,10 @@ void UpdateWindowContent()
 
 	for(int i = 0; i < instance->loadedScene->numUIs; ++i)
 	{
-		EnableShader(instance->loadedScene->ui[i]->shader);
-		DrawMesh(instance->loadedScene->ui[i]);
-		glUniformMatrix4fv(instance->loadedScene->ui[i]->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->identMatrix);
-		glUniformMatrix4fv(instance->loadedScene->ui[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->orthoMatrix);
+		EnableShader(instance->loadedScene->ui[i]->mesh->shader);
+		DrawMesh(instance->loadedScene->ui[i]->mesh);
+		glUniformMatrix4fv(instance->loadedScene->ui[i]->mesh->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->identMatrix);
+		glUniformMatrix4fv(instance->loadedScene->ui[i]->mesh->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->uiMatrix);
 	}
 
 /*	glFlush();
