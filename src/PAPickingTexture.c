@@ -107,7 +107,7 @@ void PickObjects(PACamera *camera, PAPickingTexture *papickingTexture, PAMesh **
 			glUniformMatrix4fv(papickingTexture->pickingShader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)camera->orthoMatrix);
 
 		glBindVertexArray(meshes[i]->vao);
-		glDrawArrays(GL_TRIANGLES, 0, meshes[i]->numFaces);
+		glDrawArrays(GL_TRIANGLES, 0, meshes[i]->numVertices);
 	}
 
 	DisablePickingTexture(papickingTexture);

@@ -2,12 +2,18 @@
 #include <GLFW/glfw3.h>
 
 PACE *instance = NULL;
-int paceObjsNum = 0;
-int paceObjsLen = 1;
+IPADrawVTable ipadrawVTable = { 0 };
+IPALightVTable ipalightVTable = { 0 };
+
+int32_t TYPE_TAG_PAMESH = -1;
+int32_t TYPE_TAG_PATEXT = -1;
+int32_t TYPE_TAG_DIRECTIONAL_LIGHT = -1;
 
 void (*PACE_key_callback)(int, int, int, int);
 
 void (*PACE_mouse_moved_callback)(double, double);
+
+void (*PACE_window_resize_callback)(int, int);
 
 void PACE_left_mouse_press()
 {
@@ -36,6 +42,8 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
 	glViewport(0, 0, width, height);
 	RescaleCamera(instance->currentCamera, width, height);
+	if(PACE_window_resize_callback)
+		PACE_window_resize_callback(width, height);
 }
 
 void PACE_hide_cursor()
@@ -94,6 +102,36 @@ PACE* InitPACE(uint32_t width, uint32_t height, PACamera *camera)
 		return NULL;
 	}
 
+	ipadrawVTable.items = malloc(sizeof(IPADraw_Funcs));
+	if(!ipadrawVTable.items)
+	{
+		free(instance);
+		return NULL;
+	}
+	ipadrawVTable.count = 0;
+	ipadrawVTable.capacity = 1;
+
+	TYPE_TAG_PAMESH = RegisterIPADrawFuncs((IPADraw_Funcs){
+		.Draw = MeshDraw
+	});
+	TYPE_TAG_PATEXT = RegisterIPADrawFuncs((IPADraw_Funcs){
+		.Draw = TextDraw
+	});
+
+	ipalightVTable.items = malloc(sizeof(IPALight_Funcs));
+	if(!ipalightVTable.items)
+	{
+		free(instance);
+		return NULL;
+	}
+	ipalightVTable.count = 0;
+	ipalightVTable.capacity = 1;
+
+	TYPE_TAG_DIRECTIONAL_LIGHT = RegisterIPALightFuncs((IPALight_Funcs){
+		.Render = DirectionalRender,
+		.IsInShadow = DirectionalIsInShadow
+	});
+
 	glfwMakeContextCurrent(instance->window);
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -144,6 +182,11 @@ void PACESetMouseMovedCallback(void (*func)(double, double))
 	PACE_mouse_moved_callback = func;
 }
 
+void PACESetWindowResizeCallback(void (*func)(int, int))
+{
+	PACE_window_resize_callback = func;
+}
+
 void PollPACE()
 {
 	glfwSwapBuffers(instance->window);
@@ -166,26 +209,28 @@ void UpdateWindowContent()
 
 	TransformCamera(instance->currentCamera);
 
-	for(int i = 0; i < instance->loadedScene->numMeshes; ++i)
+	for(int i = 0; i < instance->loadedScene->MeshCount; ++i)
 	{
-		EnableShader(instance->loadedScene->meshes[i]->shader);
+		IPADraw_Draw(instance->loadedScene->meshes[i]);
+/*		EnableShader(instance->loadedScene->meshes[i]->shader);
 		DrawMesh(instance->loadedScene->meshes[i]);
 		glUniformMatrix4fv(instance->loadedScene->meshes[i]->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->transform.transformMatrix);
 		if(instance->currentCamera->viewMode == PAProjection)
 			glUniformMatrix4fv(instance->loadedScene->meshes[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->projectionMatrix);
 		else
 			glUniformMatrix4fv(instance->loadedScene->meshes[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->orthoMatrix);
-	}
+*/	}
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	for(int i = 0; i < instance->loadedScene->numUIs; ++i)
+	for(int i = 0; i < instance->loadedScene->UICount; ++i)
 	{
-		EnableShader(instance->loadedScene->ui[i]->shader);
+		IPADraw_Draw(instance->loadedScene->uis[i]);
+/*		EnableShader(instance->loadedScene->ui[i]->shader);
 		DrawMesh(instance->loadedScene->ui[i]);
 		glUniformMatrix4fv(instance->loadedScene->ui[i]->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->identMatrix);
 		glUniformMatrix4fv(instance->loadedScene->ui[i]->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->uiMatrix);
-	}
+*/	}
 
 /*	glFlush();
 	glFinish();
