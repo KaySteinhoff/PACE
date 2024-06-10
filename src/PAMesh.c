@@ -123,15 +123,18 @@ int SetPAMeshVertices(PAMesh *mesh, float *vertices, uint32_t numVertices)
 	size_t vertSize = sizeof(float)*numVertices;
 	mesh->numVertices = numVertices/8;
 
-	printf("%f, %f\n", vertices[6], vertices[7]);
-
 	glBufferData(GL_ARRAY_BUFFER, vertSize, vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(6*sizeof(float)));
-	glEnableVertexAttribArray(2);
+
+	GLuint posLocation = glGetAttribLocation(mesh->shader->ID, "aPos");
+	GLuint normalLocation = glGetAttribLocation(mesh->shader->ID, "aNormal");
+	GLuint texLocation = glGetAttribLocation(mesh->shader->ID, "aTexCoord");
+
+	glVertexAttribPointer(posLocation, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
+	glEnableVertexAttribArray(posLocation);
+	glVertexAttribPointer(normalLocation, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof(float)));
+	glEnableVertexAttribArray(normalLocation);
+	glVertexAttribPointer(texLocation, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(6*sizeof(float)));
+	glEnableVertexAttribArray(texLocation);
 
 	glBindVertexArray(0);
 	return 1;
