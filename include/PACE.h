@@ -140,6 +140,8 @@ struct PACE
 
 	PAScene *loadedScene;
 
+	uint32_t dpiWidth;
+	uint32_t dpiHeight;
 	PACamera *currentCamera;
 
 	PAPickingTexture *papickingTexture;

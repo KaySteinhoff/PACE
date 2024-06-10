@@ -1,5 +1,16 @@
 #include <PACE.h>
 
+float verts[24] = {
+	0, 0, 0, 0,
+	0, 0, 0, 1,
+	0, 0, 1, 1,
+
+	0, 0, 0, 0,
+	0, 0, 1, 1,
+	0, 0, 1, 0
+};
+
+
 PAText* CreateText(int x, int y, const char *text, int fontSize, PAFont *font)
 {
 	PAText *textObj = malloc(sizeof(PAText));
@@ -27,7 +38,6 @@ PAText* CreateText(int x, int y, const char *text, int fontSize, PAFont *font)
 	textObj->colorUniform = glGetUniformLocation(textObj->shader->ID, "color");
 
 	glGenVertexArrays(1, &textObj->vao);
-//	glGenBuffers(1, &textObj->vbo);
 
 	glBindVertexArray(textObj->vao);
 	glBindBuffer(GL_ARRAY_BUFFER, textObj->shader->vbo);
@@ -65,40 +75,39 @@ void DrawText(PAText *obj)
 	glActiveTexture(GL_TEXTURE0);
 	glBindVertexArray(obj->vao);
 
-	float verts[24] = {
-		0, 0, 0, 0,
-		0, 0, 0, 1,
-		0, 0, 1, 1,
+	float pixelWidth = obj->fontSize * GetInstance()->dpiWidth / 72.0f;
+	float pixelHeight = obj->fontSize * GetInstance()->dpiHeight / 72.0f;
 
-		0, 0, 0, 0,
-		0, 0, 1, 1,
-		0, 0, 1, 0
-	};
 	for(char *c = (char*)obj->text; *c != '\0'; ++c)
 	{
 		struct Character ch = obj->font->chars[(unsigned char)*c];
 
-		float xpos = tmpX + ch.bx;
-		float ypos = obj->y - ch.by;
+		float xpos = tmpX + (ch.bx/128.0)*pixelWidth;
+		float ypos = obj->y - (ch.by/128.0)*pixelHeight;
+
+		float w = (ch.sx/128.0)*pixelWidth;
+		float h = (ch.sy/128.0)*pixelHeight;
+
+		printf("%c: %d, %d\n", *c, w, h);
 
 		//Triangle 1
 		verts[0] = xpos;
 		verts[1] = ypos;
 
 		verts[4] = xpos;
-		verts[5] = ypos + ch.sy;
+		verts[5] = ypos + h;
 
-		verts[8] = xpos + ch.sx;
-		verts[9] = ypos + ch.sy;
+		verts[8] = xpos + w;
+		verts[9] = ypos + h;
 
 		//Triangle 2
 		verts[12] = xpos;
 		verts[13] = ypos;
 
-		verts[16] = xpos + ch.sx;
-		verts[17] = ypos + ch.sy;
+		verts[16] = xpos + w;
+		verts[17] = ypos + h;
 
-		verts[20] = xpos + ch.sx;
+		verts[20] = xpos + w;
 		verts[21] = ypos;
 
 		glBindTexture(GL_TEXTURE_2D, ch.texture);
@@ -107,11 +116,11 @@ void DrawText(PAText *obj)
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		tmpX += (ch.advance >> 6);
-		obj->width += (ch.advance >> 6);
+		tmpX += ((ch.advance>>6)/128.0)*pixelWidth;
+		obj->width += ((ch.advance>>6)/128.0)*pixelWidth;
 
 		if(ch.sy > obj->height)
-			obj->height = ch.sy;
+			obj->height = (ch.sy/128.0)*pixelWidth;
 	}
 
 	glBindVertexArray(0);

@@ -171,6 +171,14 @@ int main(int argc, char **argv)
 	neptune->transform.sy = 0.35;
 	neptune->transform.sz = 0.35;
 
+	PAText* text = NULL;
+	PAFont *sans = LoadFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "lol");
+
+	if(sans)
+		text = CreateText(100, 100, "Lol", 16, sans);
+	else
+		printf("Failed to load font!\n");
+
 	pace->loadedScene = scene;
 
 //	testExt->setup();
@@ -232,6 +240,8 @@ int main(int argc, char **argv)
 
 		//Render shit
 		UpdateWindowContent();
+		if(text)
+			DrawText(text);
 //		testExt->update();
 	}
 

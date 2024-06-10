@@ -19,7 +19,7 @@ PAFont* LoadFont(const char *path, const char *key)
 		return NULL;
 	}
 
-	FT_Set_Pixel_Sizes(font->ff, 0, 100);
+	FT_Set_Pixel_Sizes(font->ff, 0, 128);
 
 	if(FT_Load_Char(font->ff, '0', FT_LOAD_RENDER))
 	{

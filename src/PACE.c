@@ -109,7 +109,20 @@ PACE* InitPACE(uint32_t width, uint32_t height, PACamera *camera)
 	glDepthFunc(GL_LESS);
 	printf("%s\n", glewGetErrorString(glewInit()));
 
+	int32_t width_mm, height_mm;
+
+	glfwGetMonitorPhysicalSize(glfwGetPrimaryMonitor(), &width_mm, &height_mm);
+	const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+	//Scale mm to pixel
+	width_mm *= mode->width/(float)width;
+	height_mm *= mode->height/(float)height;
+
 	instance->running = 1;
+	instance->dpiWidth = mode->width/((width_mm/10/2.54));
+	instance->dpiHeight = mode->height/((height_mm/10/2.54));
+
+	printf("%d, %d\n", width_mm, height_mm);
 
 	if(!camera)
 		instance->currentCamera = CreateCamera(width, height, 0.1, 1000);
