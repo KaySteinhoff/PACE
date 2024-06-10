@@ -84,14 +84,8 @@ float* MirrorModel(float *data, int *length, p3dpc header)
 	}
 }
 
-PAMesh* LoadMeshFromFile(const char *path, PAShader *shader)
+IPADraw LoadMeshFromFile(const char *path, PAShader *shader)
 {
-	PAMesh *mesh = CreateMesh();
-
-	if(!mesh || !shader)
-		return NULL;
-	mesh->shader = shader;
-
 	if(!meshDictionary)
 		meshDictionary = CreateDict(dict_size_small);
 
@@ -99,22 +93,12 @@ PAMesh* LoadMeshFromFile(const char *path, PAShader *shader)
 
 	//File was already loaded once
 	if(mData)
-	{
-		printf("mesh found!\n");
-		EnableShader(shader);
-		SetPAMeshVertices(mesh, mData->data, mData->numVertices);
-
-		return mesh;
-	}
-	printf("mesh not found.\n");
+		return newMesh(shader, mData->data, mData->numVertices);
 
 	FILE *fptr = fopen(path, "rb");
 
 	if(!fptr)
-	{
-		free(mesh);
-		return NULL;
-	}
+		return (IPADraw){ 0 };
 
 	fseek(fptr, 0, SEEK_END);
 	long fsize = ftell(fptr)-sizeof(p3dpc);
@@ -125,18 +109,14 @@ PAMesh* LoadMeshFromFile(const char *path, PAShader *shader)
 	fread(&header, sizeof(header), 1, fptr);
 	uint8_t *vertices = malloc(header.numVertices*3);
 	if(!vertices)
-	{
-		free(mesh);
-		return NULL;
-	}
+		return (IPADraw){ 0 };
 
 	size_t faceSize = fsize-header.numVertices*3;
 	uint8_t *faces = malloc(faceSize);
 	if(!faces)
 	{
-		free(mesh);
 		free(vertices);
-		return NULL;
+		return (IPADraw){ 0 };
 	}
 
 	//Read values
@@ -149,10 +129,9 @@ PAMesh* LoadMeshFromFile(const char *path, PAShader *shader)
 	float *data = malloc(dataLength*sizeof(float));
 	if(!data)
 	{
-		free(mesh);
 		free(vertices);
 		free(faces);
-		return NULL;
+		return (IPADraw){ 0 };
 	}
 
 	//Transform vertex/face values into usable values
@@ -170,31 +149,34 @@ PAMesh* LoadMeshFromFile(const char *path, PAShader *shader)
 	data = MirrorModel(data, &dataLength, header);
 	if(!data)
 	{
-		free(mesh);
 		free(vertices);
 		free(faces);
-		return NULL;
+		return (IPADraw){ 0 };
 	}
-
-	EnableShader(shader);
-	mesh->vertices = data;
-	//Apply data pointer to mesh
-	SetPAMeshVertices(mesh, data, dataLength);
 
 	mData = malloc(sizeof(struct meshData));
 
 	if(!mData)
 	{
-		free(mesh);
 		free(vertices);
 		free(faces);
-		return NULL;
+		return (IPADraw){ 0 };
 	}
+
+	float* tmp = CalculateNormals(data, dataLength);
+	if(!tmp)
+	{
+		free(vertices);
+		free(faces);
+		return (IPADraw){ 0 };
+	}
+	data = tmp;
+	dataLength += (dataLength/5)*3;
 
 	mData->numVertices = dataLength;
 	mData->data = data;
 
 	dictAddEntry(meshDictionary, (char*)path, mData);
 
-	return mesh;
+	return newMesh(shader, mData->data, mData->numVertices);
 }

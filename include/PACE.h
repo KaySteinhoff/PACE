@@ -12,6 +12,62 @@
 
 #define _USE_MATH_DEFINES
 
+extern int32_t TYPE_TAG_PAMESH;
+extern int32_t TYPE_TAG_PATEXT;
+extern int32_t TYPE_TAG_DIRECTIONAL_LIGHT;
+
+//Define interfaces
+
+typedef struct
+{
+	int32_t typeTag;
+	void *data;
+}IPADraw;
+
+typedef struct
+{
+	void (*Draw)(void*);
+}IPADraw_Funcs;
+
+void IPADraw_Draw(IPADraw obj);
+
+typedef struct
+{
+	IPADraw_Funcs *items;
+	size_t count;
+	size_t capacity;
+}IPADrawVTable;
+
+extern IPADrawVTable ipadrawVTable;
+
+int32_t RegisterIPADrawFuncs(IPADraw_Funcs item);
+
+typedef struct
+{
+	int32_t typeTag;
+	void *data;
+}IPALight;
+
+typedef struct
+{
+	void (*Render)(void*);
+	int (*IsInShadow)(void*, vec3);
+}IPALight_Funcs;
+
+void IPALight_Render(IPALight light);
+int IPALight_IsInShadow(IPALight light, vec3 position);
+
+typedef struct
+{
+	IPALight_Funcs *items;
+	size_t count;
+	size_t capacity;
+}IPALightVTable;
+
+extern IPALightVTable ipalightVTable;
+
+int32_t RegisterIPALightFuncs(IPALight_Funcs item);
+
 enum PAViewMode
 {
 	PAProjection,
@@ -20,6 +76,7 @@ enum PAViewMode
 
 extern void (*PACE_key_callback)(int, int, int, int);
 extern void (*PACE_mouse_moved_callback)(double, double);
+extern void (*PACE_window_resize_callback)(int, int);
 
 typedef struct Mouse
 {
@@ -39,6 +96,8 @@ typedef struct PAMesh PAMesh;
 typedef struct PAShader PAShader;
 typedef struct PATexture PATexture;
 typedef struct PAScene PAScene;
+
+typedef struct PADirectionalLight PADirectionalLight;
 
 typedef struct PAPickingTexture
 {
@@ -149,6 +208,7 @@ PACE* GetInstance();
 PACE* InitPACE(uint32_t width, uint32_t height, PACamera *camera);
 void PACESetKeyCallback(void (*func)(int, int, int, int));
 void PACESetMouseMovedCallback(void (*func)(double, double));
+void PACESetWindowResizeCallback(void (*func)(int, int));
 void PACE_hide_cursor();
 void PACE_show_cursor();
 void PollPACE();
@@ -157,39 +217,33 @@ void ClearPACE();
 
 struct PAScene
 {
-	PAMesh **ui;
-	PAMesh **meshes;
-	int numUIs;
-	int numMeshes;
-	int allocMeshes;
-	int allocUIs;
+	IPADraw *uis;
+	IPADraw *meshes;
+	size_t UICount;
+	size_t MeshCount;
+	size_t MeshCapacity;
+	size_t UICapacity;
 };
 
 PAScene* CreateScene();
-int AddMeshToScene(PAScene *scene, PAMesh *mesh);
-int RemoveMeshFromScene(PAScene *scene, int index, PAMesh *mesh);
+int AddMeshToScene(PAScene *scene, IPADraw mesh);
+int AddUIToScene(PAScene *scene, IPADraw ui);
+int RemoveMeshFromScene(PAScene *scene, int index, IPADraw mesh);
+int RemoveUIFromScene(PAScene *scene, int index, IPADraw ui);
 void PurgePAScene(PAScene *scene, int purgeMeshes);
 
 struct PAMesh
 {
-	float *vertices;
 	uint32_t numVertices;
-	uint32_t numFaces;
-
-	float *normals;
-	uint32_t numNormals;
-
-	float *uvs;
-	uint32_t numUVs;
 
 	PATransform transform;
 	GLuint vao;
 	PAShader *shader;
 };
 
-PAMesh* CreateMesh();
-int SetPAMeshVertices(PAMesh *mesh, float *vertices, uint32_t numVertices);
-void DrawMesh(PAMesh *mesh);
+IPADraw newMesh(PAShader *shader, float *vertices, uint32_t numVertices);
+void MeshDraw(void *raw_data);
+float* CalculateNormals(float *vertices, uint32_t numVertices);
 void PurgePAMesh(PAMesh *mesh);
 
 typedef struct PAFont
@@ -226,9 +280,8 @@ typedef struct PAText
 	int width, height;
 }PAText;
 
-PAText* CreateText(int x, int y, const char *text, int fontSize, PAFont *font);
-void SetTextColor(PAText *obj, GLfloat r, GLfloat g, GLfloat b);
-void DrawText(PAText *obj);
+IPADraw newText(int x, int y, const char *text, int fontSize, PAFont *font);
+void TextDraw(void *raw_data);
 
 struct PATexture
 {
@@ -265,5 +318,19 @@ PAShader* LoadShaderFromSource(char *vertexSource, char *fragmentSource);
 int SetInt(PAShader *shader, const char *name, int value);
 int SetFloat(PAShader *shader, const char *name, float value);
 PAShader* CompileShader(const char *vertexShader, const char *fragmentShader);
+
+struct PADirectionalLight
+{
+	vec3 direction;
+
+	vec3 ambientColor;
+	vec3 lightColor;
+
+	uint8_t shadows;
+};
+
+IPALight newDirectionalLight(vec3 direction, vec3 ambientLight, vec3 lightColor);
+void DirectionalRender(void *raw_data);
+int DirectionalIsInShadow(void *raw_data, vec3 position);
 
 #endif

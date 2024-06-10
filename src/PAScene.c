@@ -7,21 +7,21 @@ PAScene* CreateScene()
 	if(!scene)
 		return NULL;
 
-	scene->numMeshes = 0;
-	scene->allocMeshes = 1;
+	scene->MeshCount = 0;
+	scene->MeshCapacity = 1;
 
-	scene->numUIs = 0;
-	scene->allocUIs = 1;
+	scene->UICount = 0;
+	scene->UICapacity = 1;
 
-	scene->meshes = malloc(sizeof(PAMesh*));
+	scene->meshes = malloc(sizeof(IPADraw));
 	if(!scene->meshes)
 	{
 		free(scene);
 		return NULL;
 	}
 
-	scene->ui = malloc(sizeof(PAMesh*));
-	if(!scene->ui)
+	scene->uis = malloc(sizeof(IPADraw));
+	if(!scene->uis)
 	{
 		free(scene);
 		return NULL;
@@ -30,42 +30,37 @@ PAScene* CreateScene()
 	return scene;
 }
 
-
-int AddMeshToScene(PAScene *scene, PAMesh *mesh)
+int AddMeshToScene(PAScene *scene, IPADraw mesh)
 {
-	scene->meshes[scene->numMeshes++] = mesh;
+	scene->meshes[scene->MeshCount++] = mesh;
 
-	if(scene->numMeshes != scene->allocMeshes)
+	if(scene->MeshCount != scene->MeshCapacity)
 		return 0;
-	scene->meshes = realloc(scene->meshes, (scene->allocMeshes<<1)*sizeof(PAMesh*));
-	if(!scene->meshes)
-	{
-		free(scene);
+	scene->MeshCapacity <<= 1;
+	IPADraw *tmp = realloc(scene->meshes, scene->MeshCapacity*sizeof(IPADraw));
+	if(!tmp)
 		return 0;
-	}
-	scene->allocMeshes = scene->allocMeshes << 1;
+	scene->meshes = tmp;
 
 	return 1;
 }
 
-/*int AddUIToScene(PAScene *scene, PAUI *ui)
+int AddUIToScene(PAScene *scene, IPADraw ui)
 {
-	scene->ui[scene->numUIs++] = ui;
+	scene->uis[scene->UICount++] = ui;
 
-	if(scene->numUIs != scene->allocUIs)
+	if(scene->UICount != scene->UICapacity)
+		return 1;
+	scene->UICapacity <<= 1;
+	IPADraw *tmp = realloc(scene->uis, scene->UICapacity*sizeof(IPADraw));
+	if(!tmp)
 		return 0;
-	scene->ui = realloc(scene->ui, (scene->allocUIs<<1)*sizeof(PAMesh*));
-	if(!scene->ui)
-	{
-		free(scene);
-		return 0;
-	}
-	scene->allocUIs = scene->allocUIs << 1;
+	scene->uis = tmp;
 
 	return 1;
-}*/
+}
 
-int RemoveMeshFromScene(PAScene *scene, int index, PAMesh *mesh)
+/*int RemoveMeshFromScene(PAScene *scene, int index, PAMesh *mesh)
 {
 	if(index < 0 || index >= scene->numMeshes)
 	{
@@ -92,7 +87,7 @@ int RemoveMeshFromScene(PAScene *scene, int index, PAMesh *mesh)
 
 	return 1;
 }
-
+*/
 void PurgePAScene(PAScene *scene, int purgeMeshes)
 {
 /*	if(purgeMeshes)

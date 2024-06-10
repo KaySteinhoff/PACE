@@ -1,5 +1,90 @@
 #include <PACE.h>
 
+PAText* CreateText(int x, int y, const char *text, int fontSize, PAFont *font);
+
+IPADraw newText(int x, int y, const char *text, int fontSize, PAFont *font)
+{
+	PAText *data = CreateText(x, y, text, fontSize, font);
+	if(!data)
+		return (IPADraw){ 0 };
+
+	return (IPADraw){
+		.typeTag = TYPE_TAG_PATEXT,
+		.data = data
+	};
+}
+
+void TextDraw(void *raw_data)
+{
+	PAText *this = (PAText*)raw_data;
+	this->width = 0;
+	this->height = 0;
+	int tmpX = this->x;
+
+	glUseProgram(this->shader->ID);
+	glBindVertexArray(this->vao);
+
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	glUniformMatrix4fv(this->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)GetInstance()->currentCamera->uiMatrix);
+	glUniform3f(this->colorUniform, this->color[0], this->color[1], this->color[2]);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindVertexArray(this->vao);
+
+	float verts[24] = {
+		0, 0, 0, 0,
+		0, 0, 0, 1,
+		0, 0, 1, 1,
+
+		0, 0, 0, 0,
+		0, 0, 1, 1,
+		0, 0, 1, 0
+	};
+	for(char *c = (char*)this->text; *c != '\0'; ++c)
+	{
+		struct Character ch = this->font->chars[(unsigned char)*c];
+
+		float xpos = tmpX + ch.bx;
+		float ypos = this->y - ch.by;
+
+		//Triangle 1
+		verts[0] = xpos;
+		verts[1] = ypos;
+
+		verts[4] = xpos;
+		verts[5] = ypos + ch.sy;
+
+		verts[8] = xpos + ch.sx;
+		verts[9] = ypos + ch.sy;
+
+		//Triangle 2
+		verts[12] = xpos;
+		verts[13] = ypos;
+
+		verts[16] = xpos + ch.sx;
+		verts[17] = ypos + ch.sy;
+
+		verts[20] = xpos + ch.sx;
+		verts[21] = ypos;
+
+		glBindTexture(GL_TEXTURE_2D, ch.texture);
+		glBindBuffer(GL_ARRAY_BUFFER, this->shader->vbo);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		tmpX += (ch.advance >> 6);
+		this->width += (ch.advance >> 6);
+
+		if(ch.sy > this->height)
+			this->height = ch.sy;
+	}
+
+	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 PAText* CreateText(int x, int y, const char *text, int fontSize, PAFont *font)
 {
 	PAText *textObj = malloc(sizeof(PAText));
@@ -46,74 +131,4 @@ void SetTextColor(PAText *obj, GLfloat r, GLfloat g, GLfloat b)
 	obj->color[0] = r;
 	obj->color[1] = g;
 	obj->color[2] = b;
-}
-
-void DrawText(PAText *obj)
-{
-	obj->width = 0;
-	obj->height = 0;
-	int tmpX = obj->x;
-
-	glUseProgram(obj->shader->ID);
-	glBindVertexArray(obj->vao);
-
-	glClear(GL_DEPTH_BUFFER_BIT);
-
-	glUniformMatrix4fv(obj->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)GetInstance()->currentCamera->uiMatrix);
-	glUniform3f(obj->colorUniform, obj->color[0], obj->color[1], obj->color[2]);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindVertexArray(obj->vao);
-
-	float verts[24] = {
-		0, 0, 0, 0,
-		0, 0, 0, 1,
-		0, 0, 1, 1,
-
-		0, 0, 0, 0,
-		0, 0, 1, 1,
-		0, 0, 1, 0
-	};
-	for(char *c = (char*)obj->text; *c != '\0'; ++c)
-	{
-		struct Character ch = obj->font->chars[(unsigned char)*c];
-
-		float xpos = tmpX + ch.bx;
-		float ypos = obj->y - ch.by;
-
-		//Triangle 1
-		verts[0] = xpos;
-		verts[1] = ypos;
-
-		verts[4] = xpos;
-		verts[5] = ypos + ch.sy;
-
-		verts[8] = xpos + ch.sx;
-		verts[9] = ypos + ch.sy;
-
-		//Triangle 2
-		verts[12] = xpos;
-		verts[13] = ypos;
-
-		verts[16] = xpos + ch.sx;
-		verts[17] = ypos + ch.sy;
-
-		verts[20] = xpos + ch.sx;
-		verts[21] = ypos;
-
-		glBindTexture(GL_TEXTURE_2D, ch.texture);
-		glBindBuffer(GL_ARRAY_BUFFER, obj->shader->vbo);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
-
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-		tmpX += (ch.advance >> 6);
-		obj->width += (ch.advance >> 6);
-
-		if(ch.sy > obj->height)
-			obj->height = ch.sy;
-	}
-
-	glBindVertexArray(0);
-	glBindTexture(GL_TEXTURE_2D, 0);
 }

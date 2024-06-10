@@ -26,4 +26,4 @@ typedef struct p3dpc
 	uint8_t symetryData;
 }p3dpc;
 
-PAMesh* LoadMeshFromFile(const char *path, PAShader *shader);
+IPADraw LoadMeshFromFile(const char *path, PAShader *shader);
