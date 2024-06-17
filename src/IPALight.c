@@ -2,12 +2,12 @@
 
 void IPALight_Render(IPALight light)
 {
-	ipalightVTable.items[light.typeTag].Render(light.data);
+	ipalightVTable.items[light.typeTag].Enable(light.data);
 }
 
-int IPALight_IsInShadow(IPALight light, vec3 position)
+void IPALight_Disable(IPALight light)
 {
-	ipalightVTable.items[light.typeTag].IsInShadow(light.data, position);
+	ipalightVTable.items[light.typeTag].Disable(light.data);
 }
 
 int32_t RegisterIPALightFuncs(IPALight_Funcs light_funcs)

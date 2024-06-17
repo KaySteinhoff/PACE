@@ -7,7 +7,7 @@ IPALightVTable ipalightVTable = { 0 };
 
 int32_t TYPE_TAG_PAMESH = -1;
 int32_t TYPE_TAG_PATEXT = -1;
-int32_t TYPE_TAG_DIRECTIONAL_LIGHT = -1;
+int32_t TYPE_TAG_AREA_LIGHT = -1;
 
 void (*PACE_key_callback)(int, int, int, int);
 
@@ -102,9 +102,9 @@ int RegisterInterfaces()
 	ipalightVTable.count = 0;
 	ipalightVTable.capacity = 1;
 
-	TYPE_TAG_DIRECTIONAL_LIGHT = RegisterIPALightFuncs((IPALight_Funcs){
-		.Render = DirectionalRender,
-		.IsInShadow = DirectionalIsInShadow
+	TYPE_TAG_AREA_LIGHT = RegisterIPALightFuncs((IPALight_Funcs){
+		.Enable = AreaEnable,
+		.Disable = AreaDisable
 	});
 
 	return 1;
@@ -209,11 +209,25 @@ void UpdateWindowContent()
 	//Otherwise: render shit
 	TransformCamera(instance->currentCamera);
 
+	//First pass: render light sources
+	for(int i = 0; i < instance->loadedScene->LightCount; ++i)
+	{
+		IPALight_Enable(instance->loadedScene->lights[i]);
+
+		//Render 3d models
+		for(int i = 0; i < instance->loadedScene->MeshCount; ++i)
+			IPADraw_Draw(instance->loadedScene->meshes[i], instance->currentCamera->viewMode == PAProjection ? instance->currentCamera->projectionMatrix : instance->currentCamera->orthoMatrix);
+
+		IPALight_Disable(instance->loadedScene->lights[i]);
+	}
+	//Reset depth
+	glClear(GL_DEPTH_BUFFER_BIT);
+
 	//Render 3d models
 	for(int i = 0; i < instance->loadedScene->MeshCount; ++i)
 		IPADraw_Draw(instance->loadedScene->meshes[i], instance->currentCamera->viewMode == PAProjection ? instance->currentCamera->projectionMatrix : instance->currentCamera->orthoMatrix);
 
-	//Reset depth buffer to draw UI on top of all 3d elements
+	//Reset depth buffer again, to draw UI on top of all 3d elements
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	//Render UI elements

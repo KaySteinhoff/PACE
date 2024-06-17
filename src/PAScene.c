@@ -30,12 +30,26 @@ PAScene* CreateScene()
 	return scene;
 }
 
+int AddLightToScene(PAScene *scene, IPALight light)
+{
+	scene->lights[scene->LightCount++] = light;
+
+	if(scene->LightCount != scene->LightCapacity)
+		return 1;
+	scene->LightCapacity <<= 1;
+	IPALight *tmp = realloc(scene->lights, scene->LightCapacity*sizeof(IPALight));
+	if(!tmp)
+		return 0;
+	scene->lights = tmp;
+	return 1;
+}
+
 int AddMeshToScene(PAScene *scene, IPADraw mesh)
 {
 	scene->meshes[scene->MeshCount++] = mesh;
 
 	if(scene->MeshCount != scene->MeshCapacity)
-		return 0;
+		return 1;
 	scene->MeshCapacity <<= 1;
 	IPADraw *tmp = realloc(scene->meshes, scene->MeshCapacity*sizeof(IPADraw));
 	if(!tmp)

@@ -50,12 +50,12 @@ typedef struct
 
 typedef struct
 {
-	void (*Render)(void*);
-	int (*IsInShadow)(void*, vec3);
+	void (*Enable)(void*);
+	void (*Disable)(void*);
 }IPALight_Funcs;
 
-void IPALight_Render(IPALight light);
-int IPALight_IsInShadow(IPALight light, vec3 position);
+void IPALight_Enable(IPALight light);
+void IPALight_Disable(IPALight light);
 
 typedef struct
 {
@@ -97,7 +97,7 @@ typedef struct PAShader PAShader;
 typedef struct PATexture PATexture;
 typedef struct PAScene PAScene;
 
-typedef struct PADirectionalLight PADirectionalLight;
+typedef struct PAAreaLight PAAreaLight;
 
 typedef struct PAPickingTexture
 {
@@ -219,15 +219,19 @@ void ClearPACE();
 
 struct PAScene
 {
+	IPALight *lights;
 	IPADraw *uis;
 	IPADraw *meshes;
 	size_t UICount;
+	size_t UICapacity;
 	size_t MeshCount;
 	size_t MeshCapacity;
-	size_t UICapacity;
+	size_t LightCount;
+	size_t LightCapacity;
 };
 
 PAScene* CreateScene();
+int AddLightToScene(PAScene *scene, IPALight light);
 int AddMeshToScene(PAScene *scene, IPADraw mesh);
 int AddUIToScene(PAScene *scene, IPADraw ui);
 int RemoveMeshFromScene(PAScene *scene, int index, IPADraw mesh);
@@ -321,18 +325,23 @@ int SetInt(PAShader *shader, const char *name, int value);
 int SetFloat(PAShader *shader, const char *name, float value);
 PAShader* CompileShader(const char *vertexShader, const char *fragmentShader);
 
-struct PADirectionalLight
+struct PAAreaLight
 {
 	vec3 direction;
 
 	vec3 ambientColor;
 	vec3 lightColor;
 
+	GLuint depthMapFBO;
+	GLuint depthMap;
+
 	uint8_t shadows;
+
+	PATransform transform;
 };
 
-IPALight newDirectionalLight(vec3 direction, vec3 ambientLight, vec3 lightColor);
-void DirectionalRender(void *raw_data);
-int DirectionalIsInShadow(void *raw_data, vec3 position);
+IPALight newAreaLight(vec3 direction, vec3 ambientLight, vec3 lightColor);
+void AreaEnable(void *raw_data);
+void AreaDisable(void *raw_data);
 
 #endif
