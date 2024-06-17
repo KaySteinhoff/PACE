@@ -26,10 +26,10 @@ typedef struct
 
 typedef struct
 {
-	void (*Draw)(void*);
+	void (*Draw)(void*, mat4x4);
 }IPADraw_Funcs;
 
-void IPADraw_Draw(IPADraw obj);
+void IPADraw_Draw(IPADraw obj, mat4x4 perspective);
 
 typedef struct
 {
@@ -207,7 +207,7 @@ struct PACE
 };
 
 PACE* GetInstance();
-PACE* InitPACE(uint32_t width, uint32_t height, PACamera *camera);
+PACE* InitPACE(const char *windowTitle, uint32_t width, uint32_t height, PACamera *camera);
 void PACESetKeyCallback(void (*func)(int, int, int, int));
 void PACESetMouseMovedCallback(void (*func)(double, double));
 void PACESetWindowResizeCallback(void (*func)(int, int));
@@ -244,7 +244,7 @@ struct PAMesh
 };
 
 IPADraw newMesh(PAShader *shader, float *vertices, uint32_t numVertices);
-void MeshDraw(void *raw_data);
+void MeshDraw(void *raw_data, mat4x4 perspective);
 float* CalculateNormals(float *vertices, uint32_t numVertices);
 void PurgePAMesh(PAMesh *mesh);
 
@@ -283,7 +283,7 @@ typedef struct PAText
 }PAText;
 
 IPADraw newText(int x, int y, const char *text, int fontSize, PAFont *font);
-void TextDraw(void *raw_data);
+void TextDraw(void *raw_data, mat4x4 perspective);
 
 struct PATexture
 {

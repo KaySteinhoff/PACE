@@ -24,7 +24,7 @@ IPADraw newText(int x, int y, const char *text, int fontSize, PAFont *font)
 	};
 }
 
-void TextDraw(void *raw_data)
+void TextDraw(void *raw_data, mat4x4 perspective)
 {
 	PAText *this = (PAText*)raw_data;
 	this->width = 0;
@@ -36,7 +36,8 @@ void TextDraw(void *raw_data)
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	glUniformMatrix4fv(this->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)GetInstance()->currentCamera->uiMatrix);
+//	glUniformMatrix4fv(this->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)GetInstance()->currentCamera->uiMatrix);
+	glUniformMatrix4fv(this->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)perspective);
 	glUniform3f(this->colorUniform, this->color[0], this->color[1], this->color[2]);
 
 	glActiveTexture(GL_TEXTURE0);

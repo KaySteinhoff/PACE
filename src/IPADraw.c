@@ -1,8 +1,8 @@
 #include <PACE.h>
 
-void IPADraw_Draw(IPADraw obj)
+void IPADraw_Draw(IPADraw obj, mat4x4 perspective)
 {
-	ipadrawVTable.items[obj.typeTag].Draw(obj.data);
+	ipadrawVTable.items[obj.typeTag].Draw(obj.data, perspective);
 }
 
 int32_t RegisterIPADrawFuncs(IPADraw_Funcs item)

@@ -23,7 +23,7 @@ IPADraw newMesh(PAShader *shader, float *vertices, uint32_t numVertices)
 	};
 }
 
-void MeshDraw(void *raw_data)
+void MeshDraw(void *raw_data, mat4x4 perspective)
 {
 	PAMesh *this = (PAMesh*)raw_data;
 
@@ -33,8 +33,11 @@ void MeshDraw(void *raw_data)
 	glUniformMatrix4fv(this->shader->modelLocation, 1, GL_FALSE, (const GLfloat*)this->transform.transformMatrix);
 
 	//Activate Texture of current mesh
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, this->shader->texture->textureID);
+	if(this->shader->texture->textureID)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, this->shader->texture->textureID);
+	}
 	//Use vertex array of current mesh
 	glBindVertexArray(this->vao);
 	glDrawArrays(GL_TRIANGLES, 0, this->numVertices);
@@ -42,10 +45,11 @@ void MeshDraw(void *raw_data)
 	glBindVertexArray(0);
 
 	glUniformMatrix4fv(this->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)GetInstance()->currentCamera->transform.transformMatrix);
-	if(GetInstance()->currentCamera->viewMode == PAProjection)
+/*	if(GetInstance()->currentCamera->viewMode == PAProjection)
 		glUniformMatrix4fv(this->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)GetInstance()->currentCamera->projectionMatrix);
 	else
 		glUniformMatrix4fv(this->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)GetInstance()->currentCamera->orthoMatrix);
+*/	glUniformMatrix4fv(this->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)perspective);
 
 }
 
@@ -92,8 +96,8 @@ float* CalculateNormals(float *vertices, uint32_t numVertices)
 		result[i*8+4] = normal[1];
 		result[i*8+5] = normal[2];
 
-		result[i*8+6] = 0.5f;
-		result[i*8+7] = 0.5f;
+		result[i*8+6] = vertices[i*5+3];
+		result[i*8+7] = vertices[i*5+4];
 	}
 
 	free(vertices);
@@ -123,15 +127,18 @@ int SetPAMeshVertices(PAMesh *mesh, float *vertices, uint32_t numVertices)
 	size_t vertSize = sizeof(float)*numVertices;
 	mesh->numVertices = numVertices/8;
 
-	printf("%f, %f\n", vertices[6], vertices[7]);
-
 	glBufferData(GL_ARRAY_BUFFER, vertSize, vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(6*sizeof(float)));
-	glEnableVertexAttribArray(2);
+
+	GLuint posLocation = glGetAttribLocation(mesh->shader->ID, "aPos");
+	GLuint normalLocation = glGetAttribLocation(mesh->shader->ID, "aNormal");
+	GLuint texLocation = glGetAttribLocation(mesh->shader->ID, "aTexCoord");
+
+	glVertexAttribPointer(posLocation, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
+	glEnableVertexAttribArray(posLocation);
+	glVertexAttribPointer(normalLocation, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof(float)));
+	glEnableVertexAttribArray(normalLocation);
+	glVertexAttribPointer(texLocation, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(6*sizeof(float)));
+	glEnableVertexAttribArray(texLocation);
 
 	glBindVertexArray(0);
 	return 1;
