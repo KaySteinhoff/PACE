@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 
 PACE *instance = NULL;
+Mouse mouse = { 0 };
 IPADrawVTable ipadrawVTable = { 0 };
 IPALightVTable ipalightVTable = { 0 };
 
@@ -237,7 +238,7 @@ void UpdateWindowContent()
 
 void ClearPACE()
 {
-	PurgePAScene(instance->loadedScene, 1);
+	PurgePAScene(instance->loadedScene);
 	free(instance);
 
 	glfwTerminate();

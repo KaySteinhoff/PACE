@@ -40,7 +40,7 @@ IPALight newAreaLight(vec3 direction, vec3 ambientColor, vec3 lightColor)
 	data->transform.ry = 30;
 
 	return (IPALight){
-		.typeTag = TYPE_TAG_DIRECTIONAL_LIGHT,
+		.typeTag = TYPE_TAG_AREA_LIGHT,
 		.data = data
 	};
 }

@@ -1,72 +1,16 @@
-#ifndef PACE_ENGINE_H
-#define PACE_ENGINE_H
+#ifndef PACE_ENGINE_H_
+#define PACE_ENGINE_H_
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <linmath.h>
+#include <PACEInterfaces.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
 #define _USE_MATH_DEFINES
-
-extern int32_t TYPE_TAG_PAMESH;
-extern int32_t TYPE_TAG_PATEXT;
-extern int32_t TYPE_TAG_DIRECTIONAL_LIGHT;
-
-//Define interfaces
-
-typedef struct
-{
-	int32_t typeTag;
-	void *data;
-}IPADraw;
-
-typedef struct
-{
-	void (*Draw)(void*, mat4x4);
-}IPADraw_Funcs;
-
-void IPADraw_Draw(IPADraw obj, mat4x4 perspective);
-
-typedef struct
-{
-	IPADraw_Funcs *items;
-	size_t count;
-	size_t capacity;
-}IPADrawVTable;
-
-extern IPADrawVTable ipadrawVTable;
-
-int32_t RegisterIPADrawFuncs(IPADraw_Funcs item);
-
-typedef struct
-{
-	int32_t typeTag;
-	void *data;
-}IPALight;
-
-typedef struct
-{
-	void (*Enable)(void*);
-	void (*Disable)(void*);
-}IPALight_Funcs;
-
-void IPALight_Enable(IPALight light);
-void IPALight_Disable(IPALight light);
-
-typedef struct
-{
-	IPALight_Funcs *items;
-	size_t count;
-	size_t capacity;
-}IPALightVTable;
-
-extern IPALightVTable ipalightVTable;
-
-int32_t RegisterIPALightFuncs(IPALight_Funcs item);
 
 enum PAViewMode
 {
@@ -88,7 +32,7 @@ typedef struct Mouse
 	int mods;
 }Mouse;
 
-static Mouse mouse;
+extern Mouse mouse;
 
 typedef struct PACamera PACamera;
 typedef struct PACE PACE;
@@ -98,28 +42,6 @@ typedef struct PATexture PATexture;
 typedef struct PAScene PAScene;
 
 typedef struct PAAreaLight PAAreaLight;
-
-typedef struct PAPickingTexture
-{
-	GLuint fbo;
-	GLuint pickingTexture;
-	GLuint depthTexture;
-
-	struct PixelInfo
-	{
-		uint32_t objectID;
-		uint32_t drawID;
-		uint32_t primID;
-	}pixelInfo;
-
-	PAShader *pickingShader;
-}PAPickingTexture;
-
-PAPickingTexture* CreatePickingTexture(uint32_t width, uint32_t height);
-void EnablePickingTexture(PAPickingTexture *papickingTexture);
-void DisablePickingTexture(PAPickingTexture *papickingTexture);
-void ReadPixelInfo(PAPickingTexture *papickingTexture, uint32_t x, uint32_t y);
-void PickObjects(PACamera *camera, PAPickingTexture *papickingTexture, PAMesh **meshes, int numMeshes);
 
 typedef struct PATransform
 {
@@ -173,6 +95,29 @@ LINMATH_H_FUNC void mat4x4_apply_transform(mat4x4 M, PATransform *transform)
 	vec3_mul_cross(transform->up, transform->right, transform->forward);
 }
 
+typedef struct PAPickingTexture
+{
+	GLuint fbo;
+	GLuint pbo;
+	GLuint pickingTexture;
+	GLuint depthTexture;
+
+	int32_t width;
+	int32_t height;
+
+	PAShader *pickingShader;
+}PAPickingTexture;
+
+typedef struct
+{
+	uint32_t objectID;
+	uint32_t drawID;
+	uint32_t primID;
+}PixelInfo;
+
+PAPickingTexture* CreatePickingTexture(uint32_t width, uint32_t height);
+PixelInfo ReadPixelInfo(PAPickingTexture *papickingTexture, uint32_t x, uint32_t y);
+
 struct PACamera
 {
 	PATransform transform;
@@ -186,6 +131,8 @@ struct PACamera
 
 	float nearPlane;
 	float farPlane;
+
+	PAPickingTexture *pickingTexture;
 };
 
 PACamera* CreateCamera(uint32_t width, uint32_t height, float nearPlane, float farPlane);
@@ -199,11 +146,7 @@ struct PACE
 
 	PAScene *loadedScene;
 
-	uint32_t dpiWidth;
-	uint32_t dpiHeight;
 	PACamera *currentCamera;
-
-	PAPickingTexture *papickingTexture;
 };
 
 PACE* GetInstance();
@@ -236,7 +179,8 @@ int AddMeshToScene(PAScene *scene, IPADraw mesh);
 int AddUIToScene(PAScene *scene, IPADraw ui);
 int RemoveMeshFromScene(PAScene *scene, int index, IPADraw mesh);
 int RemoveUIFromScene(PAScene *scene, int index, IPADraw ui);
-void PurgePAScene(PAScene *scene, int purgeMeshes);
+int RemoveLightFromScene(PAScene *scene, int index, IPALight light);
+void PurgePAScene(PAScene *scene);
 
 struct PAMesh
 {
@@ -267,7 +211,7 @@ typedef struct PAFont
 	}*chars;
 }PAFont;
 
-PAFont* LoadFont(const char *path, const char *key);
+PAFont* LoadFont(const char *path);
 
 typedef struct PAText
 {
@@ -296,8 +240,6 @@ struct PATexture
 	int width;
 	int height;
 	int nrChannels;
-
-	unsigned char *data;
 };
 
 PATexture* CreateTexture(int width, int height, int nrChannels, unsigned char *data);

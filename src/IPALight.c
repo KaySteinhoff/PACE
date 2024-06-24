@@ -1,6 +1,6 @@
 #include <PACE.h>
 
-void IPALight_Render(IPALight light)
+void IPALight_Enable(IPALight light)
 {
 	ipalightVTable.items[light.typeTag].Enable(light.data);
 }

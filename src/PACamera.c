@@ -6,6 +6,12 @@ PACamera* CreateCamera(uint32_t width, uint32_t height, float nearPlane, float f
 
 	if(!camera)
 		return NULL;
+	camera->pickingTexture = CreatePickingTexture(width, height);
+	if(!camera->pickingTexture)
+	{
+		free(camera);
+		return NULL;
+	}
 
 	DEFAULT_TRANSFORM(defaultTransform);
 	camera->transform = defaultTransform;

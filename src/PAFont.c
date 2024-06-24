@@ -1,6 +1,6 @@
 #include <PACE.h>
 
-PAFont* LoadFont(const char *path, const char *key)
+PAFont* LoadFont(const char *path)
 {
 	PAFont *font = malloc(sizeof(PAFont));
 

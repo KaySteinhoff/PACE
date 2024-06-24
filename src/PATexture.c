@@ -25,21 +25,16 @@ PATexture* CreateTextureInstance()
 	tex->width = 0;
 	tex->height = 0;
 	tex->nrChannels = 0;
-	tex->data = NULL;
 
 	return tex;
 }
 
 PATexture* CreateTexture(int width, int height, int nrChannels, unsigned char *data)
 {
-	if(!data)
-		return NULL;
 	PATexture *tex = CreateTextureInstance();
 
 	if(!tex)
 		return NULL;
-
-	tex->data = data;
 
 	return tex;
 }
@@ -54,20 +49,20 @@ PATexture* LoadTextureFromFile(const char *path, GLint byteFormat, GLenum format
 		return NULL;
 	}
 
-	tex->data = stbi_load(path, &tex->width, &tex->height, &tex->nrChannels, 0);
+	unsigned char *data = stbi_load(path, &tex->width, &tex->height, &tex->nrChannels, 0);
 
-	if(!tex->data)
+	if(!data)
 	{
 		printf("Failed to read image data\n");
-		stbi_image_free(tex->data);
+		stbi_image_free(data);
 		free(tex);
 		return NULL;
 	}
 
-	glTexImage2D(GL_TEXTURE_2D, 0, byteFormat, tex->width, tex->height, 0, format, GL_UNSIGNED_BYTE, tex->data);
+	glTexImage2D(GL_TEXTURE_2D, 0, byteFormat, tex->width, tex->height, 0, format, GL_UNSIGNED_BYTE, data);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
-	stbi_image_free(tex->data);
+	stbi_image_free(data);
 
 	return tex;
 }

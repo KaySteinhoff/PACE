@@ -102,11 +102,7 @@ int AddUIToScene(PAScene *scene, IPADraw ui)
 	return 1;
 }
 */
-void PurgePAScene(PAScene *scene, int purgeMeshes)
+void PurgePAScene(PAScene *scene)
 {
-/*	if(purgeMeshes)
-		for(int i = 0; i < scene->numMeshes; ++i)
-			PurgePAMesh(scene->meshes[i]);
-*/
 	free(scene);
 }
