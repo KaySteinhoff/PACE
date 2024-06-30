@@ -19,6 +19,7 @@ IPALight newAreaLight(vec3 direction, vec3 ambientColor, vec3 lightColor)
 	data->lightColor[2] = lightColor[2];
 
 	data->shadows = 1;
+	data->shader = CompileShader("#version 110\nattibute vec3 aPos;uniform mat4 view;uniform mat4 model;uniform mat4 perspective;void main(){ gl_Position = perspective * model * view * vec4(aPos, 1.0); }", "#version 110\nvoid main(){ }");
 
 	glGenFramebuffers(1, &data->depthMapFBO);
 
