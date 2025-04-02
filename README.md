@@ -11,230 +11,151 @@ As an added bonus you now can't use OOP(except for Interfaces), because why not?
 
 PACE is build around the idea of a data oriented program. At the top is the PACE object containing
 things like the current camera or loaded scene.
-These in turn hold things like the (number of)meshes, current view mode(orthographic or projection),
-etc.
+These in turn hold things like the (number of)meshes, current view mode(orthographic or perspective), etc.
 
 In total the (current) design hierarchy looks like this:
 
 - PACE (PACE instance)
-	- Current Camera (PACamera instance)
+	- Current Camera (PACamera pointer)
 		- Transform (PATransform instance)
 	- Loaded Scene (PAScene instance)
-		- Meshes (IPADraw instances)
+		- Meshes (IPADraw pointer)
 			- Transform (PATransform instance)
-			- Shader (PAShader instance)
-				- Texture (PATexture instance)
-		- UI elements (IPADraw instances)
+				- Parent transform (PATransform pointer)
+			- Shader (PAShader pointer)
+				- Texture (PATexture pointer)
+		- UI elements (IPADraw pointer)
+		- Lights (IPALight pointer)
 
 Although the engine has a data oriented approach it isn't totally data oriented. Generally all children and the 
 children of children are pointers, meaning they can be manipulated without walking the hierarchy. An exception is PATransform as it is a member of each struct using it.
 This approach was used as it allows for easy manipulation of values of for example the shader texture 
 without using PACE->Loaded Scene->Mesh->Shader->Texture.
 
-## Creating a PACE instance
+## Quick start
 
-Function
+For a deeper understanding on how the PACE engine works, please view the <a href="doc/PACE.md">wiki</a>.
+
+In any use case of the PACE engine it has to be initialized. For this the InitPACE() function has to be used.
+
 ```C
-PACE* InitPACE(const char *windowTitle, uint32_t width, uint32_t height, PACamera *camera);
+unsigned int InitPACE(PACE *pace, int argc, char **argv);
 ```
 
-Parameters
-|Name|Usage|
-|---|---|
-|windowTitle|The title of the created window|
-|width|The width of the window|
-|height|The height of the window|
-|camera|A pointer to the camera that is to be used. If NULL the function will instanctiate a camera with default near and far planes of 0.1 and 1000 respectively|
-
-The global PACE instane is initialized with the CreatePACE() function and passing the desired window name, width, height and optional PACamera instance.
-If the camera pointer is NULL the PACE instance will create one with the default values for the near (0.1) and far plane(1000).
-
-## Using a PACE instance
-
-Now that the PACE engine is initialized we have to use it to achive something. PACE uses two functions for this: PollPACE() and UpdateWindowContent().
-
-## Polling events
-
-Function
+Thus an example should look like this:
 ```C
-PollPACE(void);
-```
+#include <PACE.h>
+#include <stdio.h>
 
-Parameters
-|Name|Usage|
-|---|---|
-
-PollPACE polls the window events queued since the last call. This is a thread blocking function.
-This function will also swap the buffers.
-
-### Events
-
-PACE uses callbacks to handle window events(for now).
-
-You can subscribe to these functions through the following functions:
-
-- PACESetKeyCallback(void (*func)(int, int, int, int))
-```C
-//Example callback function
-void key_input(int keyChar, int scancode, int action, int mods)//...
-```
-- PACESetMouseMovedCallback(void (*func)(double, double))
-```C
-//Example callback function
-void mouse_moved(double currentX, double currentY)//...
-```
-
-## Updating window
-
-Function
-```C
-void UpdateWindowContent();
-```
-
-Parameters
-|Name|Usage|
-|---|---|
-
-This function will render all objects and process all render related issues, except for the swapping of buffers as this will have happend with PollPACE.
-
-## Cleaning up after yourself
-
-Function
-```C
-void ClearPACE();
-```
-
-Parameters
-|Name|Usage|
-|---|---|
-
-After you're done using the PACE instance you call the ClearPACE() function.
-This function will clear the currently loaded scene(which in turn will unload all contained meshes, shaders, etc.) from memory and then the instance itself.
-Any other scenes/meshes/shaders/textures won't be cleared.
-
-Friendly reminder: 
-If this is the end of your program you don't need to clear everything from memory as it will be done automatically by the OS once the process gets terminated.
-
-# Creating a camera
-
-Function
-```C
-PACamera* CreateCamera(uint32_t width, uint32_t height, float nearPlane, float farPlane);
-```
-
-Parameters
-|Name|Usage|
-|---|---|
-|width|The viewport width of the camera. Generally the width of the window as it uses a ratio not the actual dimensions|
-|height|The viewport height of the camera. Generally the height of the window as it uses a ration not the actual dimensions|
-|nearPlane|The distance of clip plane near the camera i.e. if it's 0.1 anything close than that will be cliped(cut away)|
-|farPlane|The distance of the clip plane distant from the camera|
-
-Returns:
-If successful an instance of PACamera. Otherwise NULL. Error values don't exist at this point in time.
-
-To create a camera you use the CreateCamera() function. Generally to create an instance of any struct you will need a Create<struct name>() function.
-The exception being PATransform, instead being created by a macro: DEFAULT_TRANSFORM(outputTransform).
-
-# Using shaders
-
-PACE provides a PAShader struct to manage all shader related issues. A PACE shader is the linked result of the compilation of a vertex and fragment shader.
-Support for a custom geometry shader is still pending but is on the to do list.
-
-PACE also provides two ways to create a shader:
-
-```C
-PAShader* CompileShader(const char *vertexShader, const char *fragmentShader);
-```
-
-Parameters
-|Name|Usage|
-|---|---|
-|vertexShader|The source code for the vertex shader part|
-|fragmentShader|The source code for the fragment shader part|
-
-```C
-PAShader* LoadShaderFromSource(const char *vertexFilePath, const char *fragmentFilePath);
-```
-
-Parameters
-|Name|Usage|
-|---|---|
-|vertexFilePath|The path to the file containing the vertex shader source code|
-|fragmentFilePath|The path to the file containing the fragment shader source code|
-
-These two functions were created for two main reasons: when creating a default struct like text, which is always rendered the same way, CompileShader() can be used to ship said struct with a default shader.
-If you want more flexibility though or use the shader on multiple different structs or even need to use different shaders on the same struct LoadShaderFromSource() can read, compile and link the shader from a source file on your PC.
-
-# PACE Interfaces
-
-PACE utilises interfaces to group structs of the same resulting properties, even if the code to render said structs differ.
-To achieve this PACE implements interfaces based on Tsoding's example [as described in this video](https://www.youtube.com/watch?v=6Riy9hVIFDE).
-
-All in all PACE currently uses two interfaces:
-
-IPADraw (Rendered objects contained in a scene, aka: meshes, text, images, etc.)
-IPALight (All currently available light sources)
-
-## How interfaces work
-
-As described in Tsoding's video all interfaces technically have the same structure:
-
-```C
-typedef struct
+void die(unsigned int error)
 {
-	size_t typeTag;
-	void *data;
-}MyInterface;
-```
+	printf("%s(Code: %d)\n", PACEStringFromErrorCode(error), error);
+	exit(error);
+}
 
-However it is best to still create multiple interface structs as to avoid confusion. For example it would be very confusing if PACE used a struct PAInterface and
-newCustomLight() returned the same interface as newCustomText(). These two things have different uses and thus should be logically sepereated to avoid accidetially adding a text object as a light or the reverse.
-
-
-After the interface is declared a *_Funcs struct has to be created, containing all interface functions. For example for the interface IPADraw it looks like this:
-
-```C
-typedef struct
+int main(int argc, char **argv)
 {
-	void (*Draw)(void*)
-}IPADraw_Funcs;
-```
+	PACE pace = { 0 };
+	unsigned int err = 0;
+	if((err = InitPACE(&pace, argc, argv)))
+		die(err);
 
-It is important to note that all interface functions have to atleast require a void* as this is the passed object data(aka the 'this' pointer).
-
-
-Finally each interface requires a _VTable struct to store all the different implementations. This struct is universally the same, however it is again useful to seperate them to avoid confusion.
-
-```C
-typedef struct
-{
-	IPADraw_Funcs *items;
-	size_t count;
-	size_t capacity;
-}IPADraw_VTable;
-```
-
-
-For every implementation there of course has to be the function, the more important thing though is that somewhere in the code there has to be a global size_t variable like the PACE_PAMESH_TAG variable.
-This is due to the fact that when writing a 'constructor' for your implementation you'll have to return an interface object, not the struct. For PAMesh it looks like this:
-
-```C
-IPADraw newMesh(...)
-{
-	PAMesh *meshData = malloc(sizeof(PAMesh));	
-	if(!meshData)
-		return (IPADraw)){ 0 };
-
-	//Some code
-	...
-
-	return (IPADraw){
-		typeTag = PACE_PAMESH_TAG,
-		data = meshData
-	};
+	ClearPACE();
 }
 ```
 
-This will tell your VTable which implementation to use when calling a function and pass the appropriate object on which to call it.
-For more information please look at Tsoding's video.
+This initializes PACE, GLFW and GLEW.
+
+After this a game window, scene, meshes, etc. can be created.
+
+```C
+#include <PACEGraphics.h>
+#include <PACE.h>
+#include <stdio.h>
+
+void die(unsigned int error)
+{
+	printf("%s(Code: %d)\n", PACEStringFromErrorCode(error), error);
+	exit(error);
+}
+
+int main(int argc, char **argv)
+{
+	float tri[] = {
+		|    Vertex    |    Normal    |    UV   |
+		-0.5, -0.5, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+		 0.0,  0.5, 0.0, 0.0, 0.0, 1.0, 0.5, 1.0,
+		 0.5, -0.5, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0,
+	};
+
+	PACE pace = { 0 };
+	unsigned int err = 0;
+	if((err = InitPACE(&pace, argc, argv)))
+		die(err);
+
+	// Create a camera by providing the instance, width, height, near/far plane
+	PACamera camera = { 0 };
+	if((err = CreatePACamera(&camera, 800, 600, 0.1, 1000.0)))
+		die(err);
+
+	// Creating game window by providing window title, width, height and camera instance
+	if((err = CreatePACE("Example", 800, 600, &camera)))
+		die(err);
+
+	// Loading a vertex and fragment shader
+	PAShader vertexShader, fragmentShader;
+	if(	(err = LoadShaderFromFile(&vertexShader, GL_VERTEX_SHADER, "exampleVertex.glsl")) ||
+		(err = LoadShaderFromFile(&fragmentShader, GL_FRAGMENT_SHADER, "exampleFragment.glsl")))
+		die(err);
+
+	// Linking the shaders into a material by providing the material instance, shader count, and a list of the shaders to link
+	PAMaterial material = { 0 };
+	if((err = CreatePAMaterial(&mat, 2, vertexShader, fragmentShader)))
+		die(err);
+
+	// Loading the triangle texture by providing the PATexture instance, the file path, as well as byte format and internal format
+	PATexture texture = { 0 };
+	if((err = LoadTextureFromFile(&texture, "Example.jpg", GL_RGB, GL_RGBA)))
+		die(err);
+	// Setting the loaded texture
+	PAMaterialSetPATexture(&material, &texture);
+
+	// Creating a mesh by providing the mesh instance, material to use, vertex data, and count
+	PAMesh mesh = { 0 };
+	if((err = CreatePAMesh(&mesh, &material, tri, 8*3)))
+		die(err);
+
+	// Creating a PADraw interface instance
+	IPADraw draw = newMesh(&mesh);
+
+	// Creating a scene by providing the scene instance
+	PAScene scene = { 0 };
+	if((err = CreatePAScene(&scene)))
+		die(err);
+
+	// Adding the created PADraw interface instance to the scene
+	if((err = AddMeshToScene(&scene, &mesh)))
+		die(err);
+
+	// Setting the previously created scene as the currently by providing the scene pointer
+	PACESetPAScene(&scene);
+
+	unsigned int running = 1;
+	// main loop
+	while(running)
+	{
+		// Polling all events(key, mouse, etc)
+		running = PollPACE();
+		// Updating the viewport
+		UpdateWindowContent();
+	}
+
+	// realeasing heap allocated data and reseting PACE to it's status
+	// post initialization phase
+	ClearPACE();
+}
+```
+
+It is important to note that it doesn't matter in which order the data of the objects is initialialized before they are refered to one another, *__EXCEPT__* the PAShader and PAMaterial objects.<br>
+In the case of PAShader and PAMaterial the PAShader(s) always have to be initialized using either LoadShaderFormSource() or CompileShader() before being passed into CreatePAMaterial().<br>
+This is because CreatePAMaterial() immediately attaches and links the given shaders into a program and discards the shader instances (as seen by the fact every function using a points except CreatePAMaterial). 

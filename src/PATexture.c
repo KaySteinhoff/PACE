@@ -25,7 +25,7 @@ unsigned int CreateTextureInstance(PATexture *tex)
 	return PACE_ERR_SUCCESS;
 }
 
-unsigned int CreateTexture(PATexture *texture, int width, int height, int nrChannels, GLint byteFormat, GLenum format, unsigned char *data)
+unsigned int CreatePATexture(PATexture *texture, int width, int height, int nrChannels, GLint byteFormat, GLenum format, unsigned char *data)
 {
 	if(!data)
 		return PACE_ERR_NULL_REFERENCE;

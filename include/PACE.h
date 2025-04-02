@@ -13,11 +13,10 @@ typedef void (*PACE_window_resize_callback)(int width, int height);
 typedef struct
 {
 	GLFWwindow *window;
-	int running;
 
 	PAScene *loadedScene;
-
 	PACamera *currentCamera;
+
 	PACE_key_callback key_callback;
 	PACE_mouse_moved_callback mouse_moved_callback;
 	PACE_window_resize_callback window_resize_callback;
@@ -25,13 +24,15 @@ typedef struct
 
 unsigned int InitPACE(PACE *pace, int argc, char **argv);
 unsigned int CreatePACE(const char *windowTitle, uint32_t width, uint32_t height, PACamera *camera);
+unsigned int PACESetPACamera(PACamera *camera);
+unsigned int PACESetPAScene(PAScene *scene);
 PACE_key_callback PACESetKeyCallback(PACE_key_callback func);
 PACE_mouse_moved_callback PACESetMouseMovedCallback(PACE_mouse_moved_callback func);
 PACE_window_resize_callback PACESetWindowResizeCallback(PACE_window_resize_callback func);
-void PACE_hide_cursor();
-void PACE_show_cursor();
-void PollPACE();
-void UpdateWindowContent();
-void ClearPACE();
+void PACEHideCursor(void);
+void PACEShowCursor(void);
+unsigned int PollPACE(void);
+void UpdatePACE(void);
+void ClearPACE(void);
 
 #endif

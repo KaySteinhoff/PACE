@@ -1,3 +1,4 @@
+
 #ifndef PACE_GRAPHICS_H_
 #define PACE_GRAPHICS_H_
 
@@ -83,7 +84,7 @@ struct PACamera
 	PAViewMode viewMode;
 
 	mat4x4 identMatrix;
-	mat4x4 projectionMatrix;
+	mat4x4 perspectiveMatrix;
 	mat4x4 uiMatrix;
 	mat4x4 orthoMatrix;
 
@@ -104,7 +105,7 @@ struct PATexture
 	int nrChannels;
 };
 
-unsigned int CreateTexture(PATexture *texture, int width, int height, int nrChannels, GLint byteFormat, GLenum format, unsigned char *data);
+unsigned int CreatePATexture(PATexture *texture, int width, int height, int nrChannels, GLint byteFormat, GLenum format, unsigned char *data);
 unsigned int LoadTextureFromFile(PATexture *texture, const char *path, GLint byteFormat, GLenum format);
 
 // PAShader (already fully defined above)
@@ -125,6 +126,7 @@ struct PAMaterial
 };
 
 unsigned int CreatePAMaterial(PAMaterial *maerial, int n, ...);
+unsigned int PAMaterialSetPATexture(PAMaterial *material, PATexture *texture);
 unsigned int EnableMaterial(PAMaterial *material);
 unsigned int SetInt(PAMaterial *material, const char *name, int value);
 unsigned int SetFloat(PAMaterial *material, const char *name, float value);

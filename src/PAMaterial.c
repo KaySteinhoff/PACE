@@ -5,6 +5,7 @@
 
 #define INVALID_UNIFORM_LOCATION 0xffffffff
 
+extern PATexture defaultPACETexture;
 extern int LogShaderCompile(GLint shaderID);
 
 unsigned int EnableMaterial(PAMaterial *material)
@@ -69,7 +70,15 @@ unsigned int CreatePAMaterial(PAMaterial *material, int n, ...)
 	if(material->perspectiveLocation == INVALID_UNIFORM_LOCATION)
 		printf("Failed to find perspective matrix location\n");
 
-	material->texture = NULL;
+	material->texture = &defaultPACETexture;
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	return PACE_ERR_SUCCESS;
+}
+
+unsigned int PAMaterialSetPATexture(PAMaterial *material, PATexture *texture)
+{
+	if(!material || !texture)
+		return PACE_ERR_NULL_REFERENCE;
+
+	material->texture = texture;
 }

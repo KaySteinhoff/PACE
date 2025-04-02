@@ -3,6 +3,8 @@
 #include <PACEErrorHandling.h>
 #include <GLFW/glfw3.h>
 
+PATexture defaultPACETexture = { 0 };
+PACamera defaultCamera = { 0 };
 PACE *instance = NULL;
 static unsigned int pace_initialized = 0;
 
@@ -29,12 +31,12 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 		instance->window_resize_callback(width, height);
 }
 
-void PACE_hide_cursor()
+void PACEHideCursor()
 {
 	glfwSetInputMode(instance->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
-void PACE_show_cursor()
+void PACEShowCursor()
 {
 	glfwSetInputMode(instance->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
@@ -89,6 +91,19 @@ unsigned int InitPACE(PACE *pace, int argc, char **argv)
 		return PACE_ERR_FAILURE;
 	}
 	instance = pace;
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+	printf("%s\n", glewGetErrorString(glewInit()));
+
+	if(!RegisterInterfaces())
+		return PACE_ERR_FAILURE;
+
+	unsigned char defaultData[] = {
+		255, 255, 255
+	};
+	unsigned int err = 0;
+	if((err = CreatePATexture(&defaultPACETexture, 1, 1, 3, GL_RGB, GL_RGB, defaultData)))
+		return err;
 
 	pace_initialized = 1;
 	return PACE_ERR_SUCCESS;
@@ -112,13 +127,8 @@ unsigned int CreatePACE(const char *windowTitle, uint32_t width, uint32_t height
 		return PACE_ERR_NULL_REFERENCE;
 	}
 
-	if(!RegisterInterfaces())
-		return PACE_ERR_FAILURE;
-
 	glfwMakeContextCurrent(instance->window);
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 	glViewport(0, 0, width, height);
 
 	glfwSetFramebufferSizeCallback(instance->window, framebuffer_size_callback);
@@ -128,16 +138,31 @@ unsigned int CreatePACE(const char *windowTitle, uint32_t width, uint32_t height
 	glClearColor(0.2, 0.3, 0.3, 1.0);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-	printf("%s\n", glewGetErrorString(glewInit()));
 
-	instance->currentCamera = camera;
+	if(!camera)
+	{
+		unsigned int err = 0;
+		if((err = CreatePACamera(&defaultCamera, width, height, 0.1, 1000.0)))
+			return err;
+		instance->currentCamera = &defaultCamera;
+	}
+	else
+		instance->currentCamera = camera;
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	instance->running = 1;
-
 	return PACE_ERR_SUCCESS;
+}
+
+unsigned int PACESetPACamera(PACamera *camera)
+{
+	instance->currentCamera = camera;
+}
+
+unsigned int PACESetPAScene(PAScene *scene)
+{
+	instance->loadedScene = scene;
 }
 
 PACE_key_callback PACESetKeyCallback(void (*func)(int, int, int, int))
@@ -167,21 +192,22 @@ PACE_window_resize_callback PACESetWindowResizeCallback(void (*func)(int, int))
 	return tmp;
 }
 
-void PollPACE()
+unsigned int PollPACE()
 {
 	glfwSwapBuffers(instance->window);
 	//Check if window should close
-	instance->running = !glfwWindowShouldClose(instance->window);
-	if(!instance->running)
-		return;
+	int running = !glfwWindowShouldClose(instance->window);
+	if(!running)
+		return running;
 	//Poll player inputs
 	glfwPollEvents();
 
 	//Clear to background color and reset depth buffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	return running;
 }
 
-void UpdateWindowContent()
+void UpdatePACE()
 {
 	//If no scene is loaded: don't render shit
 	if(!instance || !instance->loadedScene)
@@ -199,7 +225,7 @@ void UpdateWindowContent()
 
 	//Render 3d models
 	for(int i = 0; i < instance->loadedScene->MeshCount; ++i)
-		IPADraw_Draw(instance->loadedScene->meshes[i], instance->currentCamera->viewMode == PAProjection ? instance->currentCamera->projectionMatrix : instance->currentCamera->orthoMatrix);
+		IPADraw_Draw(instance->loadedScene->meshes[i], instance->currentCamera->viewMode == PAProjection ? instance->currentCamera->perspectiveMatrix : instance->currentCamera->orthoMatrix);
 
 	//Reset depth buffer again, to draw UI on top of all 3d elements
 	glClear(GL_DEPTH_BUFFER_BIT);
