@@ -84,8 +84,10 @@ float* MirrorModel(float *data, int *length, p3dpc header)
 	}
 }
 
-IPADraw LoadMeshFromFile(const char *path, PAShader *shader)
+IPADraw LoadMeshFromFile(PAMesh *mesh, const char *path, PAMaterial *material)
 {
+	if(!mesh)
+		return (IPADraw) { 0 };
 	if(!meshDictionary)
 		meshDictionary = CreateDict(dict_size_small);
 
@@ -93,7 +95,11 @@ IPADraw LoadMeshFromFile(const char *path, PAShader *shader)
 
 	//File was already loaded once
 	if(mData)
-		return newMesh(shader, mData->data, mData->numVertices);
+	{
+		if(!CreatePAMesh(mesh, material, mData->data, mData->numVertices))
+			return newMesh(mesh);
+		return (IPADraw) { 0 };
+	}
 
 	FILE *fptr = fopen(path, "rb");
 
@@ -178,5 +184,7 @@ IPADraw LoadMeshFromFile(const char *path, PAShader *shader)
 
 	dictAddEntry(meshDictionary, (char*)path, mData);
 
-	return newMesh(shader, mData->data, mData->numVertices);
+	if(CreatePAMesh(mesh, material, mData->data, mData->numVertices))
+		return (IPADraw) { 0 };
+	return newMesh(mesh);
 }

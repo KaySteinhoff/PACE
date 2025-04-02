@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <PACE.h>
+#include <PACEGraphics.h>
 
 /*
 3dpc file structure
@@ -26,4 +26,4 @@ typedef struct p3dpc
 	uint8_t symetryData;
 }p3dpc;
 
-IPADraw LoadMeshFromFile(const char *path, PAShader *shader);
+IPADraw LoadMeshFromFile(PAMesh *mesh, const char *path, PAMaterial *material);

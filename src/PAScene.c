@@ -1,11 +1,10 @@
+#include <PACEErrorHandling.h>
 #include <PACE.h>
 
-PAScene* CreateScene()
+unsigned int CreatePAScene(PAScene *scene)
 {
-	PAScene *scene = malloc(sizeof(PAScene));
-
 	if(!scene)
-		return NULL;
+		return PACE_ERR_NULL_REFERENCE;
 
 	scene->MeshCount = 0;
 	scene->MeshCapacity = 1;
@@ -15,22 +14,16 @@ PAScene* CreateScene()
 
 	scene->meshes = malloc(sizeof(IPADraw));
 	if(!scene->meshes)
-	{
-		free(scene);
-		return NULL;
-	}
+		return PACE_ERR_NULL_REFERENCE;
 
 	scene->uis = malloc(sizeof(IPADraw));
 	if(!scene->uis)
-	{
-		free(scene);
-		return NULL;
-	}
+		return PACE_ERR_NULL_REFERENCE;
 
-	return scene;
+	return PACE_ERR_SUCCESS;
 }
 
-int AddLightToScene(PAScene *scene, IPALight light)
+unsigned int AddLightToScene(PAScene *scene, IPALight light)
 {
 	scene->lights[scene->LightCount++] = light;
 
@@ -44,32 +37,65 @@ int AddLightToScene(PAScene *scene, IPALight light)
 	return 1;
 }
 
-int AddMeshToScene(PAScene *scene, IPADraw mesh)
+unsigned int AddMeshToScene(PAScene *scene, IPADraw mesh)
 {
+	if(!scene || !scene->meshes)
+		return PACE_ERR_NULL_REFERENCE;
 	scene->meshes[scene->MeshCount++] = mesh;
 
-	if(scene->MeshCount != scene->MeshCapacity)
-		return 1;
+	if(scene->MeshCount < scene->MeshCapacity)
+		return PACE_ERR_SUCCESS;
 	scene->MeshCapacity <<= 1;
 	IPADraw *tmp = realloc(scene->meshes, scene->MeshCapacity*sizeof(IPADraw));
 	if(!tmp)
-		return 0;
+		return PACE_ERR_NULL_REFERENCE;
 	scene->meshes = tmp;
 
-	return 1;
+	return PACE_ERR_SUCCESS;
 }
 
-int AddUIToScene(PAScene *scene, IPADraw ui)
+unsigned int AddUIToScene(PAScene *scene, IPADraw ui)
 {
+	if(!scene || !scene->uis)
+		return PACE_ERR_NULL_REFERENCE;
 	scene->uis[scene->UICount++] = ui;
 
-	if(scene->UICount != scene->UICapacity)
-		return 1;
+	if(scene->UICount < scene->UICapacity)
+		return PACE_ERR_SUCCESS;
 	scene->UICapacity <<= 1;
 	IPADraw *tmp = realloc(scene->uis, scene->UICapacity*sizeof(IPADraw));
 	if(!tmp)
-		return 0;
+		return PACE_ERR_NULL_REFERENCE;
 	scene->uis = tmp;
+
+	return PACE_ERR_SUCCESS;
+}
+
+unsigned int RemoveUIFromScene(PAScene *scene, int index, IPADraw ui)
+{
+	if(index < 0 || index >= scene->UICount)//If the user passes a faulty index try to use the ui object
+	{
+		if(scene->uis[scene->UICount-1].data == ui.data)//Check if the last element is the passed object
+		{
+			scene->uis[--scene->UICount] = (IPADraw){ 0 };//If so set the last element to NULL ans reduce uicount by 1
+			return 1;
+		}
+		for(int i = 0; i < scene->UICount-1; ++i)//Otherwise go through all elements and check if they match
+		{
+			if(scene->uis[i].data == ui.data)
+			{
+				scene->uis[i] = scene->uis[--scene->UICount];
+				return 1;
+			}
+		}
+
+		return 0;//If none match the object doesn't exist in this scene
+	}
+
+	if(index == --scene->UICount)
+		scene->uis[scene->UICount] = (IPADraw) { 0 };
+	else
+		scene->uis[index] = scene->uis[scene->UICount];//This causes two pointers to point to the same instance the last one however should never be used as it is outside of the specified length
 
 	return 1;
 }
@@ -102,11 +128,3 @@ int AddUIToScene(PAScene *scene, IPADraw ui)
 	return 1;
 }
 */
-void PurgePAScene(PAScene *scene, int purgeMeshes)
-{
-/*	if(purgeMeshes)
-		for(int i = 0; i < scene->numMeshes; ++i)
-			PurgePAMesh(scene->meshes[i]);
-*/
-	free(scene);
-}

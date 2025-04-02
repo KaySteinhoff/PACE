@@ -1,18 +1,14 @@
+#include <PACEErrorHandling.h>
 #include <PACE.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-PATexture* CreateTextureInstance()
+unsigned int CreateTextureInstance(PATexture *tex)
 {
 	stbi_set_flip_vertically_on_load(1);
 
-	PATexture *tex = malloc(sizeof(PATexture));
-
 	if(!tex)
-	{
-		printf("Failed to allocate texture\n");
-		return NULL;
-	}
+		return PACE_ERR_NULL_REFERENCE;
 
 	glGenTextures(1, &tex->textureID);
 	glBindTexture(GL_TEXTURE_2D, tex->textureID);
@@ -25,49 +21,47 @@ PATexture* CreateTextureInstance()
 	tex->width = 0;
 	tex->height = 0;
 	tex->nrChannels = 0;
-	tex->data = NULL;
 
-	return tex;
+	return PACE_ERR_SUCCESS;
 }
 
-PATexture* CreateTexture(int width, int height, int nrChannels, unsigned char *data)
+unsigned int CreateTexture(PATexture *texture, int width, int height, int nrChannels, GLint byteFormat, GLenum format, unsigned char *data)
 {
 	if(!data)
-		return NULL;
-	PATexture *tex = CreateTextureInstance();
+		return PACE_ERR_NULL_REFERENCE;
 
-	if(!tex)
-		return NULL;
+	unsigned int err = 0;
+	if((err = CreateTextureInstance(texture)))
+		return err;
 
-	tex->data = data;
-
-	return tex;
-}
-
-PATexture* LoadTextureFromFile(const char *path, GLint byteFormat, GLenum format)
-{
-	PATexture *tex = CreateTextureInstance();
-
-	if(!tex)
-	{
-		printf("No texture instance could be created\n");
-		return NULL;
-	}
-
-	tex->data = stbi_load(path, &tex->width, &tex->height, &tex->nrChannels, 0);
-
-	if(!tex->data)
-	{
-		printf("Failed to read image data\n");
-		stbi_image_free(tex->data);
-		free(tex);
-		return NULL;
-	}
-
-	glTexImage2D(GL_TEXTURE_2D, 0, byteFormat, tex->width, tex->height, 0, format, GL_UNSIGNED_BYTE, tex->data);
+	glTexImage2D(GL_TEXTURE_2D, 0, byteFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
-	stbi_image_free(tex->data);
+	texture->width = width;
+	texture->height = height;
+	texture->nrChannels = nrChannels;
 
-	return tex;
+	return PACE_ERR_SUCCESS;
+}
+
+unsigned int LoadTextureFromFile(PATexture *texture, const char *path, GLint byteFormat, GLenum format)
+{
+	unsigned int err = 0;
+	if((err = CreateTextureInstance(texture)))
+		return err;
+
+	unsigned char *data = stbi_load(path, &texture->width, &texture->height, &texture->nrChannels, 0);
+
+	if(!data)
+	{
+		stbi_image_free(data);
+		return PACE_ERR_INVALID_ARGUMENT;
+	}
+
+	glTexImage2D(GL_TEXTURE_2D, 0, byteFormat, texture->width, texture->height, 0, format, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	stbi_image_free(data);
+
+	return PACE_ERR_SUCCESS;
 }

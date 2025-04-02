@@ -1,49 +1,32 @@
 #include <PACE.h>
+#include <PACEGraphics.h>
+#include <PACEErrorHandling.h>
 #include <GLFW/glfw3.h>
 
 PACE *instance = NULL;
-IPADrawVTable ipadrawVTable = { 0 };
-IPALightVTable ipalightVTable = { 0 };
-
-int32_t TYPE_TAG_PAMESH = -1;
-int32_t TYPE_TAG_PATEXT = -1;
-int32_t TYPE_TAG_AREA_LIGHT = -1;
-
-void (*PACE_key_callback)(int, int, int, int);
-
-void (*PACE_mouse_moved_callback)(double, double);
-
-void (*PACE_window_resize_callback)(int, int);
-
-void PACE_left_mouse_press()
-{
-}
-void PACE_left_mouse_release() { }
-void PACE_right_mouse_press() { }
-void PACE_right_mouse_release() { }
+static unsigned int pace_initialized = 0;
 
 void PACE_mouse_button_callback(GLFWwindow *win, int button, int action, int mods)
 {
-	mouse.button = button;
-	mouse.action = action;
-	mouse.mods = mods;
+	if(!instance->key_callback)
+		return;
 
 	if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-		PACE_left_mouse_press();
-	if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
-		PACE_left_mouse_release();
-	if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
-		PACE_right_mouse_press();
-	if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
-		PACE_right_mouse_release();
+		instance->key_callback(button, 0, action, mods);
+	else if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+		instance->key_callback(button, 0, action, mods);
+	else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+		instance->key_callback(button, 0, action, mods);
+	else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
+		instance->key_callback(button, 0, action, mods);
 }
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
 	glViewport(0, 0, width, height);
 	RescaleCamera(instance->currentCamera, width, height);
-	if(PACE_window_resize_callback)
-		PACE_window_resize_callback(width, height);
+	if(instance->window_resize_callback)
+		instance->window_resize_callback(width, height);
 }
 
 void PACE_hide_cursor()
@@ -58,89 +41,79 @@ void PACE_show_cursor()
 
 void PACE_cursor_position_changed_callback(GLFWwindow *window, double x, double y)
 {
-	mouse.x = (int32_t)x;
-	mouse.y = (int32_t)y;
-
-	if(PACE_mouse_moved_callback)
-		PACE_mouse_moved_callback(x, y);
+	if(instance->mouse_moved_callback)
+		instance->mouse_moved_callback(x, y);
 }
 
 void PACE_key_press_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-	if(PACE_key_callback)
-		PACE_key_callback(key, scancode, action, mods);
-}
-
-PACE* GetInstance()
-{
-	return instance;
+	if(instance->key_callback)
+		instance->key_callback(key, scancode, action, mods);
 }
 
 int RegisterInterfaces()
 {
-	ipadrawVTable.items = malloc(sizeof(IPADraw_Funcs));
-	if(!ipadrawVTable.items)
-		return 0;
-
-	ipadrawVTable.count = 0;
-	ipadrawVTable.capacity = 1;
-
+	//Drawables VTable initialization
 	TYPE_TAG_PAMESH = RegisterIPADrawFuncs((IPADraw_Funcs){
 		.Draw = MeshDraw
 	});
+	if(TYPE_TAG_PAMESH == -1)
+		ThrowError("Failed to register PAMesh as a drawable!", "RegisterIPADrawFuncs fail!");
 	TYPE_TAG_PATEXT = RegisterIPADrawFuncs((IPADraw_Funcs){
 		.Draw = TextDraw
 	});
+	if(TYPE_TAG_PATEXT == -1)
+		ThrowError("Failed to register PAText as a drawable!", "RegisterIPADrawFuncs fail!");
 
-	ipalightVTable.items = malloc(sizeof(IPALight_Funcs));
-	if(!ipalightVTable.items)
-	{
-		free(ipadrawVTable.items);
-		return 0;
-	}
-
-	ipalightVTable.count = 0;
-	ipalightVTable.capacity = 1;
-
-	TYPE_TAG_AREA_LIGHT = RegisterIPALightFuncs((IPALight_Funcs){
-		.Enable = AreaEnable,
-		.Disable = AreaDisable
+	//Lights VTable initialization
+	TYPE_TAG_PAAREA_LIGHT = RegisterIPALightFuncs((IPALight_Funcs){
+		.Render = AreaRender,
 	});
+	if(TYPE_TAG_PAAREA_LIGHT == -1)
+		ThrowError("Failed to register PAAreaLight as a lightSource!", "RegisterIPALightFuncs fail!");
+
+	//Collider VTable initialization
 
 	return 1;
 }
 
-PACE* InitPACE(const char *windowTitle, uint32_t width, uint32_t height, PACamera *camera)
+unsigned int InitPACE(PACE *pace, int argc, char **argv)
 {
-	if(instance)
-		free(instance);
-
-	instance = malloc(sizeof(PACE));
-
-	if(!instance)
-		return NULL;
-
+	if(!pace)
+		return PACE_ERR_NULL_REFERENCE;
+	if(pace_initialized)
+		return PACE_ERR_SUCCESS;
 	if(!glfwInit())
 	{
-		printf("Failed to initialize GLFW!\n");
-		free(instance);
-		return NULL;
+		ThrowError("Failed to initialize GLFW!", "glfwInit error");
+		return PACE_ERR_FAILURE;
+	}
+	instance = pace;
+
+	pace_initialized = 1;
+	return PACE_ERR_SUCCESS;
+}
+
+unsigned int CreatePACE(const char *windowTitle, uint32_t width, uint32_t height, PACamera *camera)
+{
+	if(!pace_initialized)
+		return PACE_ERR_UNINITIALIZED;
+	if(!camera)
+	{
+		ThrowError("Given camera pointer is NULL!", "NULL reference!");
+		return PACE_ERR_NULL_REFERENCE;
 	}
 
 	instance->window = glfwCreateWindow(width, height, windowTitle, NULL, NULL);
 
 	if(!instance->window)
 	{
-		printf("Failed to create window\n");
-		free(instance);
-		return NULL;
+		ThrowError("Failed to create window using glfw!", "Window creation error");
+		return PACE_ERR_NULL_REFERENCE;
 	}
 
 	if(!RegisterInterfaces())
-	{
-		free(instance);
-		return NULL;
-	}
+		return PACE_ERR_FAILURE;
 
 	glfwMakeContextCurrent(instance->window);
 
@@ -157,33 +130,41 @@ PACE* InitPACE(const char *windowTitle, uint32_t width, uint32_t height, PACamer
 	glDepthFunc(GL_LESS);
 	printf("%s\n", glewGetErrorString(glewInit()));
 
-	//If no camera is gives create one with default values
-	if(!camera)
-		instance->currentCamera = CreateCamera(width, height, 0.1, 1000);
-	else
-		instance->currentCamera = camera;
+	instance->currentCamera = camera;
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	instance->running = 1;
 
-	return instance;
+	return PACE_ERR_SUCCESS;
 }
 
-void PACESetKeyCallback(void (*func)(int, int, int, int))
+PACE_key_callback PACESetKeyCallback(void (*func)(int, int, int, int))
 {
-	PACE_key_callback = func;
+	if(!pace_initialized)
+		return NULL;
+	PACE_key_callback tmp = instance->key_callback;
+	instance->key_callback = func;
+	return tmp;
 }
 
-void PACESetMouseMovedCallback(void (*func)(double, double))
+PACE_mouse_moved_callback PACESetMouseMovedCallback(void (*func)(double, double))
 {
-	PACE_mouse_moved_callback = func;
+	if(!pace_initialized)
+		return NULL;
+	PACE_mouse_moved_callback tmp = instance->mouse_moved_callback;
+	instance->mouse_moved_callback = func;
+	return tmp;
 }
 
-void PACESetWindowResizeCallback(void (*func)(int, int))
+PACE_window_resize_callback PACESetWindowResizeCallback(void (*func)(int, int))
 {
-	PACE_window_resize_callback = func;
+	if(!pace_initialized)
+		return NULL;
+	PACE_window_resize_callback tmp = instance->window_resize_callback;
+	instance->window_resize_callback = func;
+	return tmp;
 }
 
 void PollPACE()
@@ -203,23 +184,16 @@ void PollPACE()
 void UpdateWindowContent()
 {
 	//If no scene is loaded: don't render shit
-	if(!instance->loadedScene)
+	if(!instance || !instance->loadedScene)
 		return;
 
 	//Otherwise: render shit
 	TransformCamera(instance->currentCamera);
 
-	//First pass: render light sources
+	//Render lights
 	for(int i = 0; i < instance->loadedScene->LightCount; ++i)
-	{
-		IPALight_Enable(instance->loadedScene->lights[i]);
+		IPALight_Render(instance->loadedScene->lights[i]);
 
-		//Render 3d models
-		for(int i = 0; i < instance->loadedScene->MeshCount; ++i)
-			IPADraw_Draw(instance->loadedScene->meshes[i], instance->currentCamera->viewMode == PAProjection ? instance->currentCamera->projectionMatrix : instance->currentCamera->orthoMatrix);
-
-		IPALight_Disable(instance->loadedScene->lights[i]);
-	}
 	//Reset depth
 	glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -237,8 +211,40 @@ void UpdateWindowContent()
 
 void ClearPACE()
 {
-	PurgePAScene(instance->loadedScene, 1);
-	free(instance);
+	instance = NULL;
 
 	glfwTerminate();
+}
+
+void calculateIntersectionPlane(vec4 r, vec3 *triangle)
+{
+	vec3 line1 = { 0 }, line2 = { 0 };
+	vec3_sub(line1, triangle[1], triangle[0]);
+	vec3_sub(line2, triangle[2], triangle[0]);
+
+	vec3 normal = { 0 }, inv = { 0 };
+	vec3_mul_cross(normal, line1, line2);
+	vec3_scale(inv, normal, -1);
+
+	r[0] = normal[0];
+	r[1] = normal[1];
+	r[2] = normal[2];
+	r[3] = vec3_dot(inv, triangle[0]);
+}
+
+unsigned int PARaycast(vec3 position, vec3 direction, PAMesh potTarget, PATransform *hitpoint)
+{
+	// Check if the potential target is behind the position
+	vec3 normalizedDir = { 0 };
+	vec3_norm(normalizedDir, direction);
+
+	vec3 targetDir = { 0 };
+	vec3_sub(targetDir, (vec3){ potTarget.transform.px, potTarget.transform.py, potTarget.transform.pz }, position);
+	vec3_norm(targetDir, targetDir);
+	if(vec3_dot(normalizedDir, targetDir) < 0)
+		return 0;
+
+//	for(int i = 0; i < )
+
+	return 0;
 }

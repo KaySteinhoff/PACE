@@ -1,39 +1,26 @@
+#include <PACEErrorHandling.h>
 #include <PACE.h>
 
-PAFont* LoadFont(const char *path, const char *key)
+unsigned int LoadFont(PAFont *font, const char *path)
 {
-	PAFont *font = malloc(sizeof(PAFont));
-
 	if(!font)
-		return NULL;
+		return PACE_ERR_NULL_REFERENCE;
 
 	if(FT_Init_FreeType(&font->fl))
-	{
-		free(font);
-		return NULL;
-	}
+		return PACE_ERR_FAILURE;
 
 	if(FT_New_Face(font->fl, path, 0, &font->ff))
-	{
-		free(font);
-		return NULL;
-	}
+		return PACE_ERR_FAILURE;
 
 	FT_Set_Pixel_Sizes(font->ff, 0, 128);
 
 	if(FT_Load_Char(font->ff, '0', FT_LOAD_RENDER))
-	{
-		free(font);
-		return NULL;
-	}
+		return PACE_ERR_FAILURE;
 
 	font->chars = malloc(128*sizeof(struct Character));
 
 	if(!font->chars)
-	{
-		free(font);
-		return NULL;
-	}
+		return PACE_ERR_NULL_REFERENCE;
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -74,5 +61,5 @@ PAFont* LoadFont(const char *path, const char *key)
 	FT_Done_Face(font->ff);
 	FT_Done_FreeType(font->fl);
 
-	return font;
+	return PACE_ERR_SUCCESS;
 }

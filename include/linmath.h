@@ -69,6 +69,14 @@ LINMATH_H_FUNC void vec##n##_dup(vec##n r, vec##n const src) \
 	int i; \
 	for(i=0; i<n; ++i) \
 		r[i] = src[i]; \
+} \
+LINMATH_H_FUNC float vec##n##_dot(vec##n a, vec##n b) \
+{ \
+	int i; \
+	float dot = 0; \
+	for(i = 0; i < n; ++i) \
+		dot += a[i]*b[i]; \
+	return dot; \
 }
 
 LINMATH_H_DEFINE_VEC(2)

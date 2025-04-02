@@ -1,24 +1,20 @@
+#include <PACEErrorHandling.h>
 #include <PACE.h>
 #include <linmath.h>
 #include <GLFW/glfw3.h>
 
-int SetPAMeshVertices(PAMesh *mesh, float *vertices, uint32_t numVertices);
+extern PACE *instance;
 
-IPADraw newMesh(PAShader *shader, float *vertices, uint32_t numVertices)
+int TYPE_TAG_PAMESH = -1;
+
+IPADraw newMesh(PAMesh *mesh)
 {
-	PAMesh *mesh = malloc(sizeof(PAMesh));
 	if(!mesh)
 		return (IPADraw){ 0 };
 
-	DEFAULT_TRANSFORM(defaultT);
-	mesh->transform = defaultT;
-
-	glGenVertexArrays(1, &mesh->vao);
-	mesh->shader = shader;
-	SetPAMeshVertices(mesh, vertices, numVertices);
-
 	return (IPADraw){
 		.typeTag = TYPE_TAG_PAMESH,
+		.visible = 1,
 		.data = mesh
 	};
 }
@@ -28,9 +24,13 @@ void MeshDraw(void *raw_data, mat4x4 perspective)
 	PAMesh *this = (PAMesh*)raw_data;
 
 	glUseProgram(this->shader->ID);
+	glBindBuffer(GL_ARRAY_BUFFER, this->shader->vbo);
+	glBindVertexArray(this->vao);
 	//Transform current mesh
 	mat4x4_apply_transform(this->transform.transformMatrix, &this->transform);
 	glUniformMatrix4fv(this->shader->modelLocation, 1, GL_FALSE, (const GLfloat*)this->transform.transformMatrix);
+	glUniformMatrix4fv(this->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)instance->currentCamera->transform.transformMatrix);
+	glUniformMatrix4fv(this->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)perspective);
 
 	//Activate Texture of current mesh
 	if(this->shader->texture->textureID)
@@ -39,24 +39,15 @@ void MeshDraw(void *raw_data, mat4x4 perspective)
 		glBindTexture(GL_TEXTURE_2D, this->shader->texture->textureID);
 	}
 	//Use vertex array of current mesh
-	glBindVertexArray(this->vao);
 	glDrawArrays(GL_TRIANGLES, 0, this->numVertices);
 
 	glBindVertexArray(0);
-
-	glUniformMatrix4fv(this->shader->viewLocation, 1, GL_FALSE, (const GLfloat*)GetInstance()->currentCamera->transform.transformMatrix);
-/*	if(GetInstance()->currentCamera->viewMode == PAProjection)
-		glUniformMatrix4fv(this->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)GetInstance()->currentCamera->projectionMatrix);
-	else
-		glUniformMatrix4fv(this->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)GetInstance()->currentCamera->orthoMatrix);
-*/	glUniformMatrix4fv(this->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)perspective);
-
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 float* CalculateNormals(float *vertices, uint32_t numVertices)
 {
 	int newSize = (numVertices/5)*3+numVertices;
-	printf("old count: %d\nnew count: %d\n", numVertices, newSize);
 
 	float *result = malloc(sizeof(float)*newSize);
 	if(!result)
@@ -104,30 +95,21 @@ float* CalculateNormals(float *vertices, uint32_t numVertices)
 	return result;
 }
 
-PAMesh* CreateMesh()
+unsigned int CreatePAMesh(PAMesh *mesh, PAMaterial *material, float *vertices, uint32_t numVertices)
 {
-	PAMesh *mesh = malloc(sizeof(PAMesh));
-
-	if(!mesh)
-		return NULL;
+	if(!mesh || !material)
+		return PACE_ERR_NULL_REFERENCE;
 
 	DEFAULT_TRANSFORM(defaultT);
 	mesh->transform = defaultT;
-
-	glGenVertexArrays(1, &mesh->vao);
-	mesh->shader = NULL;
-
-	return mesh;
-}
-
-int SetPAMeshVertices(PAMesh *mesh, float *vertices, uint32_t numVertices)
-{
-	glBindVertexArray(mesh->vao);
-
-	size_t vertSize = sizeof(float)*numVertices;
+	mesh->shader = material;
 	mesh->numVertices = numVertices/8;
 
-	glBufferData(GL_ARRAY_BUFFER, vertSize, vertices, GL_STATIC_DRAW);
+	glGenVertexArrays(1, &mesh->vao);
+	glBindBuffer(GL_ARRAY_BUFFER, material->vbo);
+	glBindVertexArray(mesh->vao);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*numVertices, vertices, GL_STATIC_DRAW);
 
 	GLuint posLocation = glGetAttribLocation(mesh->shader->ID, "aPos");
 	GLuint normalLocation = glGetAttribLocation(mesh->shader->ID, "aNormal");
@@ -141,10 +123,7 @@ int SetPAMeshVertices(PAMesh *mesh, float *vertices, uint32_t numVertices)
 	glEnableVertexAttribArray(texLocation);
 
 	glBindVertexArray(0);
-	return 1;
-}
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-void PurgePAMesh(PAMesh *mesh)
-{
-	free(mesh);
+	return PACE_ERR_SUCCESS;
 }
