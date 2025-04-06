@@ -22,13 +22,13 @@ struct PAScene
 __Fields__
 |Fieldname|Utility|
 |---|---|
-|lights|A pointer to a list of IPALight instances|
+|<a href="IPALight.md">lights</a>|A pointer to a list of IPALight instances|
 |lightCapacity|The capacity of the light list|
 |lightCount|The light count|
-|meshes|A pointer to a list of IPADraw instances|
+|<a href="IPADraw.md">meshes</a>|A pointer to a list of IPADraw instances|
 |meshCapacity|The capacity of the mesh list|
 |meshCount|The mesh count|
-|uis|A pointer to a list of IPADraw instances|
+|<a href="IPADraw.md">uis</a>|A pointer to a list of IPADraw instances|
 |uiCapacity|The capacity of the ui list|
 |uiCount|The ui count|
 

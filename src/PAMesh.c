@@ -5,7 +5,7 @@
 
 extern PACE *instance;
 
-int TYPE_TAG_PAMESH = -1;
+unsigned int TYPE_TAG_PAMESH = 0;
 
 IPADraw newMesh(PAMesh *mesh)
 {

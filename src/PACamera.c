@@ -13,7 +13,9 @@ unsigned int CreatePACamera(PACamera *camera, uint32_t width, uint32_t height, f
 	mat4x4_identity(camera->perspectiveMatrix);
 	mat4x4_identity(camera->orthoMatrix);
 
-	float ratio = width/(float)height;
+	float ratio = 1e30;
+	if(height != 0)
+		ratio = width/(float)height;
 	mat4x4_perspective(camera->perspectiveMatrix, 3.141592653/4.0, ratio, nearPlane, farPlane);
 	mat4x4_ortho(camera->uiMatrix, 0, width, height, 0, 1, -1);
 	mat4x4_ortho(camera->orthoMatrix, -ratio, ratio, -1, 1, nearPlane, farPlane);
@@ -28,7 +30,9 @@ unsigned int CreatePACamera(PACamera *camera, uint32_t width, uint32_t height, f
 
 unsigned int RescaleCamera(PACamera *camera, uint32_t width, uint32_t height)
 {
-	float ratio = width/(float)height;
+	float ratio = 1e30;
+	if(height > 0)
+		ratio = width/(float)height;
 	mat4x4_perspective(camera->perspectiveMatrix, 3.14159263/4.0, ratio, camera->nearPlane, camera->farPlane);
 	mat4x4_ortho(camera->uiMatrix, 0, width, height, 0, 1, -1);
 	mat4x4_ortho(camera->orthoMatrix, -ratio, ratio, -1, 1, camera->nearPlane, camera->farPlane);

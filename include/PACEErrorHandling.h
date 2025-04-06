@@ -7,6 +7,7 @@ static const unsigned int PACE_ERR_UNINITIALIZED = 2;
 static const unsigned int PACE_ERR_NULL_REFERENCE = 3;
 static const unsigned int PACE_ERR_INVALID_ARGUMENT = 4;
 static const unsigned int PACE_ERR_INVALID_OPERATION = 5;
+static const unsigned int PACE_ERR_OUT_OF_MEMORY = 6;
 
 typedef void(*PAERRORHANDLER)(char *msg, char *title);
 

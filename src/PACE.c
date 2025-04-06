@@ -1,5 +1,6 @@
 #include <PACE.h>
 #include <PACEGraphics.h>
+#include <PACEAudio.h>
 #include <PACEErrorHandling.h>
 #include <GLFW/glfw3.h>
 
@@ -25,8 +26,14 @@ void PACE_mouse_button_callback(GLFWwindow *win, int button, int action, int mod
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
+	width = width < 0 ? 0 : width;
+	height = height < 0 ? 0 : height;
+
 	glViewport(0, 0, width, height);
-	RescaleCamera(instance->currentCamera, width, height);
+	if(width <= 0 || height <= 0)
+		return;
+	if(instance->currentCamera)
+		RescaleCamera(instance->currentCamera, width, height);
 	if(instance->window_resize_callback)
 		instance->window_resize_callback(width, height);
 }
@@ -59,22 +66,31 @@ int RegisterInterfaces()
 	TYPE_TAG_PAMESH = RegisterIPADrawFuncs((IPADraw_Funcs){
 		.Draw = MeshDraw
 	});
-	if(TYPE_TAG_PAMESH == -1)
+	if(!TYPE_TAG_PAMESH)
 		ThrowError("Failed to register PAMesh as a drawable!", "RegisterIPADrawFuncs fail!");
 	TYPE_TAG_PATEXT = RegisterIPADrawFuncs((IPADraw_Funcs){
 		.Draw = TextDraw
 	});
-	if(TYPE_TAG_PATEXT == -1)
+	if(!TYPE_TAG_PATEXT)
 		ThrowError("Failed to register PAText as a drawable!", "RegisterIPADrawFuncs fail!");
 
 	//Lights VTable initialization
 	TYPE_TAG_PAAREA_LIGHT = RegisterIPALightFuncs((IPALight_Funcs){
 		.Render = AreaRender,
 	});
-	if(TYPE_TAG_PAAREA_LIGHT == -1)
+	if(!TYPE_TAG_PAAREA_LIGHT)
 		ThrowError("Failed to register PAAreaLight as a lightSource!", "RegisterIPALightFuncs fail!");
 
 	//Collider VTable initialization
+
+	//Audio VTable initialization
+	TYPE_TAG_WAV_AUDIO = RegisterIPATrackFuncs((IPATrack_Funcs){
+		.Play = WavPlay,
+		.Stop = WavStop,
+		.SetTimeOffset = WavSetTimeOffset
+	});
+	if(!TYPE_TAG_WAV_AUDIO)
+		ThrowError("Failed to register PAWavAudio as a audio type!", "RegisterIPATrackFuncs fail!");
 
 	return 1;
 }
@@ -91,15 +107,21 @@ unsigned int InitPACE(PACE *pace, int argc, char **argv)
 		return PACE_ERR_FAILURE;
 	}
 	instance = pace;
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-	printf("%s\n", glewGetErrorString(glewInit()));
 
 	if(!RegisterInterfaces())
 		return PACE_ERR_FAILURE;
 
+	GLFWwindow *dummy = glfwCreateWindow(1, 1, "PACEdummy", NULL, NULL);
+	glfwMakeContextCurrent(dummy);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+	glViewport(0, 0, 1, 1);
+	printf("%s\n", glewGetErrorString(glewInit()));
+	glfwMakeContextCurrent(NULL);
+	glfwDestroyWindow(dummy);
+
 	unsigned char defaultData[] = {
-		255, 255, 255
+		255, 255, 255, 255
 	};
 	unsigned int err = 0;
 	if((err = CreatePATexture(&defaultPACETexture, 1, 1, 3, GL_RGB, GL_RGB, defaultData)))
@@ -135,6 +157,7 @@ unsigned int CreatePACE(const char *windowTitle, uint32_t width, uint32_t height
 	glfwSetKeyCallback(instance->window, PACE_key_press_callback);
 	glfwSetCursorPosCallback(instance->window, PACE_cursor_position_changed_callback);
 	glfwSetMouseButtonCallback(instance->window, PACE_mouse_button_callback);
+
 	glClearColor(0.2, 0.3, 0.3, 1.0);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -210,7 +233,7 @@ unsigned int PollPACE()
 void UpdatePACE()
 {
 	//If no scene is loaded: don't render shit
-	if(!instance || !instance->loadedScene)
+	if(!instance || !instance->loadedScene || !instance->currentCamera)
 		return;
 
 	//Otherwise: render shit

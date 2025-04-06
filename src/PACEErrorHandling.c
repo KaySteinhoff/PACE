@@ -12,6 +12,7 @@ static const char *errorStrings[] = {
 	"NULL reference",
 	"Invalid argument",
 	"Invalid operation",
+	"Out of memory",
 };
 PAERRORHANDLER errorHandler = NULL;
 

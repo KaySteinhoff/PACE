@@ -1,6 +1,6 @@
 #include <PACE.h>
 
-int TYPE_TAG_PABOX_COLLIDER = -1;
+unsigned int TYPE_TAG_PABOX_COLLIDER = 0;
 
 IPACollider newBoxCollider(PATransform boxTransform)
 {

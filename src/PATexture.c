@@ -2,6 +2,7 @@
 #include <PACE.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <stdio.h>
 
 unsigned int CreateTextureInstance(PATexture *tex)
 {
@@ -35,7 +36,8 @@ unsigned int CreatePATexture(PATexture *texture, int width, int height, int nrCh
 		return err;
 
 	glTexImage2D(GL_TEXTURE_2D, 0, byteFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-	glGenerateMipmap(GL_TEXTURE_2D);
+//	if(glGenerateMipmap)
+		glGenerateMipmap(GL_TEXTURE_2D);
 
 	texture->width = width;
 	texture->height = height;

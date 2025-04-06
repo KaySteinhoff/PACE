@@ -1,6 +1,6 @@
-# IPADraw
+# IPATrack
 
-IPADraw is an <a href="PACEInterfaces.md">interface</a> used to manage drawables such as <a href="PAMesh.md">Meshes</a> and <a href="PAText.md">Text</a>.<br>
+IPATrack is an <a href="PACEInterfaces.md">interface</a> used to manage music tracks of different file types such as <a href="PAWavTrack.md">*.wav</a> or *.mp3.<br>
 As these things are to be handled the same, yet are rendered using different algorithms they are perfect candidates for interfaces.<br>
 C though, as expected, doesn't have interfaces I've had to implement my own interfacing system. To do so I copied Tsodings interfacing logic, which he wrote for his panim project.
 
@@ -10,15 +10,13 @@ C though, as expected, doesn't have interfaces I've had to implement my own inte
 typedef struct
 {
 	unsigned int typeTag;
-	int visible;
 	void *data;
-}IPADraw;
+}IPATrack;
 ```
 
 |Field name|Utility|
 |---|---|
 |typeTag|Used to identify the interface implementation|
-|visible|Used to determine whether the drawable should be rendered|
 |data|A pointer to the object used in the interface implementation|
 
 ## Functions
@@ -26,11 +24,29 @@ typedef struct
 ```C
 typedef struct
 {
-	void (*Draw)(void *, mat4x4);
-}IPADraw_Funcs;
+	void (*Play)(void *);
+	void (*Stop)(void *);
+	void (*SetTimeOffset)(void *, unsigned int);
+}IPATrack_Funcs;
 ```
 
-### IPADraw->Draw
+### IPATrack->Play
+
+__Arguments__<br>
+
+__Description__<br>
+
+__Example__<br>
+
+### IPATrack->Stop
+
+__Arguments__<br>
+
+__Description__<br>
+
+__Example__<br>
+
+### IPATrack->SetTimeOffset
 
 __Arguments__<br>
 

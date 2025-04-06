@@ -1,6 +1,6 @@
 #include <PACE.h>
 
-int TYPE_TAG_PAOOBB = -1;
+unsigned int TYPE_TAG_PAOOBB = 0;
 
 IPACollider newOOBB(PAMesh *mesh)
 {

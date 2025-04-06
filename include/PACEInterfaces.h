@@ -4,16 +4,17 @@
 #include <linmath.h>
 #include <stdint.h>
 
-extern int32_t TYPE_TAG_PAMESH;
-extern int32_t TYPE_TAG_PATEXT;
-extern int32_t TYPE_TAG_PAAREA_LIGHT;
-extern int32_t TYPE_TAG_PAOOBB;
-extern int32_t TYPE_TAG_PABOX_COLLIDER;
+extern unsigned int TYPE_TAG_PAMESH;
+extern unsigned int TYPE_TAG_PATEXT;
+extern unsigned int TYPE_TAG_PAAREA_LIGHT;
+extern unsigned int TYPE_TAG_PAOOBB;
+extern unsigned int TYPE_TAG_PABOX_COLLIDER;
+extern unsigned int TYPE_TAG_WAV_AUDIO;
 
 //Drawables like Meshes, Text and other UI types, etc,
 typedef struct
 {
-	int32_t typeTag;
+	unsigned int typeTag;
 	int visible;
 	void *data;
 }IPADraw;
@@ -25,12 +26,12 @@ typedef struct
 	void (*Draw)(void*, mat4x4);
 }IPADraw_Funcs;
 
-int32_t RegisterIPADrawFuncs(IPADraw_Funcs item);
+unsigned int RegisterIPADrawFuncs(IPADraw_Funcs item);
 
 //Lights like Directional(Sun), Area, Point, etc.
 typedef struct
 {
-	int32_t typeTag;
+	unsigned int typeTag;
 	int visible;
 	void *data;
 }IPALight;
@@ -42,12 +43,12 @@ typedef struct
 	void (*Render)(void*);
 }IPALight_Funcs;
 
-int32_t RegisterIPALightFuncs(IPALight_Funcs item);
+unsigned int RegisterIPALightFuncs(IPALight_Funcs item);
 
 //Colliders like AABB, OOBB, Sphere, Box, etc.
 typedef struct
 {
-	int32_t typeTag;
+	unsigned int typeTag;
 	void *data;
 }IPACollider;
 
@@ -60,6 +61,26 @@ typedef struct
 	int (*RaycastHitTest)(void*, float*, float*, float);
 }IPACollider_Funcs;
 
-int32_t RegisterIPAColliderFuncs(IPACollider_Funcs item);
+unsigned int RegisterIPAColliderFuncs(IPACollider_Funcs item);
+
+// Audio like *.wav, *.mp3, etc.
+typedef struct
+{
+	unsigned int typeTag;
+	void *data;
+}IPATrack;
+
+void IPATrack_Play(IPATrack track);
+void IPATrack_Stop(IPATrack track);
+void IPATrack_SetTimeOffset(IPATrack track, unsigned int offsetInMs);
+
+typedef struct
+{
+	void (*Play)(void *);
+	void (*Stop)(void *);
+	void (*SetTimeOffset)(void *, unsigned int);
+}IPATrack_Funcs;
+
+unsigned int RegisterIPATrackFuncs(IPATrack_Funcs item);
 
 #endif

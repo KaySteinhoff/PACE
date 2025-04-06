@@ -1,7 +1,7 @@
 #include <PACEErrorHandling.h>
 #include <PACEGraphics.h>
 
-int TYPE_TAG_PAAREA_LIGHT = -1;
+unsigned int TYPE_TAG_PAAREA_LIGHT = 0;
 
 unsigned int CreatePAAreaLight(PAAreaLight *light, vec3 direction, vec3 ambientColor, vec3 lightColor)
 {

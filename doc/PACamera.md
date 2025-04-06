@@ -21,8 +21,8 @@ struct PACamera
 
 |Fieldname|Utility|
 |---|---|
-|transform|The camera transform aka it's position and rotation|
-|viewMode|The view mode of the camera. Either PAPerspective or PAOrtho|
+|<a href="PATransform.md">transform</a>|The camera transform aka it's position and rotation|
+|<a href="PAViewMode.md">viewMode</a>|The view mode of the camera. Either PAPerspective or PAOrtho|
 |identMatrix|A precomputed identity matrix|
 |perspectiveMatrix|A precomputed perspective matrix used when in viewMode PAPerspective|
 |uiMatrix|A precomputed matrix for the UI elements(based on screen space)|

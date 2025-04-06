@@ -3,7 +3,7 @@
 
 extern PACE *instance;
 
-int TYPE_TAG_PATEXT = -1;
+unsigned int TYPE_TAG_PATEXT = 0;
 
 float verts[24] = {
 	0, 0, 0, 0,
