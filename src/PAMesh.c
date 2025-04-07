@@ -33,7 +33,12 @@ void MeshDraw(void *raw_data, mat4x4 perspective)
 	glUniformMatrix4fv(this->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)perspective);
 
 	//Activate Texture of current mesh
-	if(this->shader->texture->textureID)
+	if(!this->shader->texture || !this->shader->texture->textureID)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, defaultPACETexture.textureID);
+	}
+	else
 	{
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, this->shader->texture->textureID);

@@ -44,11 +44,29 @@ unsigned int CreatePAText(PAText *text, int x, int y, const char *txt, int fontS
 ```
 
 __Arguments__
+|Name|Utility|
+|---|---|
+|text|A pointer to the text object that is to be initialized|
+|x|The x position(in screenspace) the text is to be rendered at(left side)|
+|y|The y position(in screenspace) the text is to be rendered at(top side)|
+|txt|The text that is to be displayed|
+|fontSize|The fontsize(in pixels) the text is to be displayed with|
+|font|A pointer to the font that is to be used when rendering the text|
 
-__Description__
+__Description__<br>
+Initializes the text given the text value font size and font.<br>
 
-__Example__
+__Example__<br>
+```C
+PAFont arial = { 0 };
+unsigned int err = 0;
+if((err = LoadFont(&arial, "arial.ttf")))
+	return err;
 
+PAText text = { 0 };
+if((err = CreatePAText(&text, 0, 0, "Hello world!", 80, &arial)))
+	return err;
+```
 
 ### newText
 
@@ -57,11 +75,27 @@ IPADraw newText(PAText *text);
 ```
 
 __Arguments__
+|Name|Utility|
+|---|---|
+|text|A pointer to the text object instance data|
 
 __Description__
+Creates a IPADraw object using the provided data pointer.
 
 __Example__
+```C
+PAFont arial = { 0 };
+unsigned int err = 0;
+if((err = LoadFont(&arial, "arial.ttf")))
+	return err;
 
+PAText text = { 0 };
+if((err = CreatePAText(&text, 0, 0, "Hello world!", 80, &arial)))
+	return err;
+
+IPADraw draw = newText(&text);
+AddUiToScene(&activeScene, draw);
+```
 
 ### TextDraw
 
@@ -70,10 +104,35 @@ void TextDraw(void *raw_data, mat4x4 perspective);
 ```
 
 __Arguments__
+|Name|Utility|
+|---|---|
+|raw_data|A pointer to the object instance data|
+|perspective|A mat4x4 configured to hold the perspective matrix used when rendering|
 
-__Description__
+__Description__<br>
+Renders the provided text object using the given perspective matrix.<br>
+Is called automatically when invoking UpdatePACE().
 
 __Example__
+```C
+PAFont arial = { 0 };
+unsigned int err = 0;
+if((err = LoadFont(&arial, "arial.ttf")))
+	return err;
+
+PAText text = { 0 };
+if((err = CreatePAText(&text, 0, 0, "Hello world!", 80, &arial)))
+	return err;
+
+AddUiToScene(&activeScene, newText(&text));
+
+unsigned int windowIsOpen = 1;
+while(windowIsOpen)
+{
+	windowIsOpen = PollPACE();
+	UpdatePACE(); // <-- TextDraw is being called here
+}
+```
 
 ### TextCalculateSize
 
@@ -82,9 +141,36 @@ void TextCalculateSize(void *raw_data);
 ```
 
 __Arguments__
+|Name|Utility|
+|---|---|
+|raw_data|A pointer to the object instance data|
 
 __Description__
+Measures the size(in screenspace) of the provided text instance.<br>
+Is being called automatically when invoking UpdarePACE().
 
 __Example__
+```C
+PAFont arial = { 0 };
+unsigned int err = 0;
+if((err = LoadFont(&arial, "arial.ttf")))
+	return err;
 
+PAText text = { 0 };
+if((err = CreatePAText(&text, 0, 0, "Hello world!", 80, &arial)))
+	return err;
 
+AddUIToScene(&activeScene, newText(&text));
+
+// Center the text
+TextCalculateSize(&text);
+text.x = windowWidth/2-text.width/2;
+text.y = windowHeight/2-text.height/2;
+
+unsigned int windowIsOpen = 1;
+while(windowIsOpen)
+{
+	windowIsOpen = PollPACE();
+	UpdatePACE(); // <-- TextCalculateSize() is being called here
+}
+```

@@ -26,14 +26,36 @@ typedef struct
 ```C
 typedef struct
 {
-	void (*Draw)(void *, mat4x4);
+	void (*Draw)(void *data, mat4x4 pers);
 }IPADraw_Funcs;
 ```
 
 ### IPADraw->Draw
 
 __Arguments__<br>
+|Name|Utility|
+|---|---|
+|data|A pointer to the object instance data|
+|pers|A mat4x4 configured to hold the perspective matix(Projection or Orthognal)|
 
 __Description__<br>
+Draws the given drawable using the given perspective matrix.<br>
+This function is being called automatically when UpdatePACE() is invoked.<br>
 
 __Example__<br>
+```C
+PAMesh mesh = { 0 };
+unsigned int err = 0;
+if((err = CreatePAMesh(&mesh, &material, rectangleMeshData, rectangleMeshDataLength)))
+	return err;
+
+if((err = AddMeshToScene(&activeScene, newMesh(&mesh))))
+	return err;
+
+unsigned int windowIsOpen = 1;
+while(windowIsOpen)
+{
+	windowIsOpen = PollPACE();
+	UpdatePACE(); // <-- IPADraw_Draw is being called here
+}
+```
