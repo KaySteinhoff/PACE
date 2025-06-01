@@ -70,7 +70,6 @@ unsigned int CreatePAMaterial(PAMaterial *material, int n, ...)
 	if(material->perspectiveLocation == INVALID_UNIFORM_LOCATION)
 		printf("Failed to find perspective matrix location\n");
 
-	material->texture = &defaultPACETexture;
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	return PACE_ERR_SUCCESS;
 }

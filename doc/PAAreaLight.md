@@ -39,10 +39,18 @@ unsigned int CreatePAAreaLight(PAAreaLight *light, vec3 direction, vec3 ambientL
 ```
 
 __Arguments__
+|Name|Utility|
+|---|---|
+|light|A pointer to the light that is to be initialized|
+|direction|A float[3] providing the direction the light is facing|
+|ambientLight|A float[3] containing the color that is to be rendered onto surfaces not illuminated by the light|
+|lightColor|A float[3] containing the color that is to be render onto surfaces illuminated by the light|
 
-__Description__
+__Description__<br>
+Initializes the given PAAreaLight object to be ready for rendering the light.
 
-__Example__
+__Example__<br>
+__Currently not implemented__
 
 ### newLight
 
@@ -51,10 +59,20 @@ IPALight newLight(PAAreaLight *light);
 ```
 
 __Arguments__
+|Name|Utility|
+|---|---|
+|light|A pointer to the object instance data|
 
 __Description__
+Creates a IPALight object ready to be used in lighting related tasks.
 
 __Example__
+```C
+PAAreaLight areaLight = { 0 };
+IPALight light = newLight(&areaLight);
+
+AddLightToScene(&activeScene, light);
+```
 
 ### AreaRender
 
@@ -63,8 +81,11 @@ void AreaRender(void *raw_data);
 ```
 
 __Arguments__
+The <a href="IPALight.md">IPALight</a>->Render implementation for PAAreaLight.
 
 __Description__
+Renders the PAAreaLight.<br>
+Normally not used by the end-user.<br>
 
-__Example__
-
+__Example__<br>
+__Currently not implemented__

@@ -24,14 +24,31 @@ typedef struct
 ```C
 typedef struct
 {
-	void (*Render)(void *);
+	void (*Render)(void *data);
 }IPALight_Funcs;
 ```
 
 ### IPALight->Render
 
 __Arguments__<br>
+|Name|Utility|
+|---|---|
+|data|A pointer to the object instance data|
 
 __Description__<br>
+Used to render the light.<br>
+Is being called automatically when invoking UpdatePACE().
 
 __Example__<br>
+```C
+PAAreaLight light = { 0 };
+
+AddLightToScene(&activeScene, newLight(&light));
+
+unsigned int windowIsOpen = 1;
+while(windowIsOpen)
+{
+	windowIsOpen = PollPACE();
+	UpdatePACE(); // IPALight->Render is being called here
+}
+```
