@@ -72,12 +72,14 @@ typedef struct
 
 void IPATrack_Play(IPATrack track);
 void IPATrack_Stop(IPATrack track);
+unsigned int IPATrack_IsPlaying(IPATrack track);
 void IPATrack_SetTimeOffset(IPATrack track, unsigned int offsetInMs);
 
 typedef struct
 {
 	void (*Play)(void *);
 	void (*Stop)(void *);
+	unsigned int (*IsPlaying)(void *);
 	void (*SetTimeOffset)(void *, unsigned int);
 }IPATrack_Funcs;
 

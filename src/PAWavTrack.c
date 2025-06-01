@@ -1,15 +1,10 @@
+#include <PACE.h>
 #include <PACEInterfaces.h>
 #include <PACEErrorHandling.h>
 #include <PACEAudio.h>
 #include <stdio.h>
-#if defined(__unix__)
-	#include <pthread.h>
-	#include <alsa/asoundlib.h>
-	#include <unistd.h>
-	static const char soundcardPortName[] = "default";
-#else
-#error "Unsupported PACE audio platform!"
-#endif
+#include <stdlib.h>
+#include <miniaudio.h>
 
 unsigned int TYPE_TAG_WAV_AUDIO = 0;
 
@@ -47,47 +42,79 @@ static const unsigned int PAAUDIO_WAV_WAVE_ID = 1163280727;
 static const unsigned int PAAUDIO_WAV_FMT_ID = 544501094;
 static const unsigned int PAAUDIO_WAV_DATA_ID = 1635017060;
 
-unsigned int WavReadFormatChunk(PAWavTrack *track, int fd)
+void wavDataCallback(ma_device *device, void *pOutput, const void *pInput, ma_uint32 frameCount)
+{
+	PAWavTrack *this = device->pUserData;
+	unsigned char *output = pOutput;
+
+	unsigned int byteOffset = (this->timeOffset * this->bitResolution * this->channels) >> 3; // The offset from the start in bytes based on the time played
+	unsigned int byteCount = (frameCount * this->bitResolution * this->channels) >> 3; // the number of bytes available to be copied into pOutput
+	for(unsigned int i = 0; i < byteCount; ++i)
+		output[i] = 0;
+	if(!this->playing)
+		return;
+
+	if(this->length - byteOffset < byteCount) // if the amount of playtime left is less than the time that needs to be filled, only fill the amount left of the track
+		byteCount = this->length - byteOffset;
+
+	for(unsigned int i = 0; i < byteCount; ++i)
+		output[i] = ((unsigned char*)this->data)[byteOffset + i];
+
+	this->timeOffset += (byteCount << 3) / (this->bitResolution * this->channels);
+	if(byteOffset + byteCount < this->length)
+		return;
+
+	if(this->loop)
+		this->timeOffset = 0;
+	else
+		this->playing = 0;
+}
+
+unsigned int WavReadFormatChunk(PAWavTrack *track, FILE *fptr)
 {
 	WAVE_Format_Chunk fmt = { 0 };
-	if(read(fd, &fmt, sizeof(WAVE_Format_Chunk)) != sizeof(WAVE_Format_Chunk) || fmt.formatTag != 1)
+	if(fread(&fmt, 1, sizeof(WAVE_Format_Chunk), fptr) != sizeof(WAVE_Format_Chunk) || fmt.formatTag != 1)
 		return PACE_ERR_INVALID_ARGUMENT;
 
 	track->bitResolution = fmt.bitsPerSample;
 	track->sampleRate = fmt.samplesPerSec;
 	track->channels = fmt.channels;
-#if defined(__unix__)
-	int bitFormat = 0;
+
+	track->outConfig = ma_device_config_init(ma_device_type_playback);
+	track->outConfig.sampleRate = fmt.samplesPerSec;
+	track->outConfig.playback.channels = fmt.channels;
+	track->outConfig.dataCallback = wavDataCallback;
+	track->outConfig.pUserData = track;
+
 	switch(fmt.bitsPerSample)
 	{
 		case 8:
-			bitFormat = SND_PCM_FORMAT_U8;
+			track->outConfig.playback.format = ma_format_u8;
 			break;
 		case 16:
-			bitFormat = SND_PCM_FORMAT_S16;
+			track->outConfig.playback.format = ma_format_s16;
 			break;
 		case 24:
-			bitFormat = SND_PCM_FORMAT_S24;
+			track->outConfig.playback.format = ma_format_s24;
 			break;
 		case 32:
-			bitFormat = SND_PCM_FORMAT_S32;
+			track->outConfig.playback.format = ma_format_s32;
 			break;
 	}
 
-	if(snd_pcm_set_params(track->playbackHandle, bitFormat, SND_PCM_ACCESS_RW_INTERLEAVED, track->channels, track->sampleRate, 1, 500000) < 0)
-		return PACE_ERR_INVALID_ARGUMENT;
-#endif
+	if(ma_device_init(NULL, &track->outConfig, &track->outDevice) != MA_SUCCESS)
+		return PACE_ERR_FAILURE;
 
 	return PACE_ERR_SUCCESS;
 }
 
-unsigned int WavReadDataChunk(PAWavTrack *track, WAVE_Chunk_head *chunk_head, int fd)
+unsigned int WavReadDataChunk(PAWavTrack *track, WAVE_Chunk_head *chunk_head, FILE *fptr)
 {
 	track->length = chunk_head->length;
 	track->data = malloc(track->length);
 	if(!track->data)
 		return PACE_ERR_NULL_REFERENCE;
-	if(read(fd, track->data, track->length) != track->length)
+	if(fread(track->data, 1, track->length, fptr) != track->length)
 	{
 		free(track->data);
 		return PACE_ERR_INVALID_ARGUMENT;
@@ -99,47 +126,45 @@ unsigned int CreatePAWavTrack(PAWavTrack *track, char *path)
 {
 	if(!track || !path)
 		return PACE_ERR_NULL_REFERENCE;
-#if defined(__unix__)
-	if(snd_pcm_open(&track->playbackHandle, soundcardPortName, SND_PCM_STREAM_PLAYBACK, 0) < 0)
-		return PACE_ERR_FAILURE;
-#endif
+
 	WAVE_FILE_head head;
-	register int fd;
+	FILE *fptr = NULL;
 
-	if((fd = open(path, O_RDONLY)) == -1)
+	if(!(fptr = fopen(path, "r")))
 		return PACE_ERR_FAILURE;
 
-	if(read(fd, &head, sizeof(WAVE_FILE_head)) != sizeof(WAVE_FILE_head))
+	if(fread(&head, 1, sizeof(WAVE_FILE_head), fptr) != sizeof(WAVE_FILE_head))
 	{
 BAD_PAWAVTRACK_FILE_READ:
-		close(fd);
+		fclose(fptr);
 		return PACE_ERR_INVALID_ARGUMENT;
 	}
 	if(PAAUDIO_WAV_RIFF_ID != head.ID || PAAUDIO_WAV_WAVE_ID != head.type)
 		goto BAD_PAWAVTRACK_FILE_READ;
 
 	register unsigned int err = 0;
-	while(read(fd, &head, sizeof(WAVE_Chunk_head)) == sizeof(WAVE_Chunk_head))
+	while(fread(&head, 1, sizeof(WAVE_Chunk_head), fptr) == sizeof(WAVE_Chunk_head))
 	{
 		err ^= err;
 
 		if(PAAUDIO_WAV_FMT_ID == head.ID)
-			err = WavReadFormatChunk(track, fd);
+			err = WavReadFormatChunk(track, fptr);
 		else if(PAAUDIO_WAV_DATA_ID == head.ID)
 		{
-			err = WavReadDataChunk(track, (WAVE_Chunk_head*)&head, fd);
-			close(fd);
+			err = WavReadDataChunk(track, (WAVE_Chunk_head*)&head, fptr);
+			fclose(fptr);
 			return err;
 		}
 
 		if(!err)
 			continue;
 
-		close(fd);
+		fclose(fptr);
 		return err;
 	}
 
-	close(fd);
+
+	fclose(fptr);
 	return PACE_ERR_INVALID_ARGUMENT; // Bad WAV file
 }
 
@@ -155,32 +180,6 @@ void WavSetTimeOffset(void *data, unsigned int offsetInMs)
 	this->timeOffset = offset;
 }
 
-#if defined(__unix__)
-void* AlsaPlayAudio(void *data)
-{
-	PAWavTrack *this = data;
-	register snd_pcm_uframes_t count = this->timeOffset, frames;
-	int frameCount = (this->length << 3) / (this->bitResolution * this->channels);
-
-	do
-	{
-		frames = snd_pcm_writei(this->playbackHandle, this->data + count, frameCount - count);
-
-		if(frames < 0)
-		{
-			frames = snd_pcm_recover(this->playbackHandle, frames, 0);
-			if(frames < 0) pthread_exit(0);
-		}
-		count += frames;
-		if(this->loop && count == frameCount)
-			count = 0;
-	} while(count < frameCount);
-
-	if(count == frameCount)
-		snd_pcm_drain(this->playbackHandle);
-}
-#endif
-
 void WavPlay(void *data)
 {
 	if(!data)
@@ -188,10 +187,8 @@ void WavPlay(void *data)
 	PAWavTrack *this = data;
 	if(!this->data)
 		return;
-#if defined(__unix__)
-	pthread_t pid;
-	pthread_create(&pid, NULL, AlsaPlayAudio, data);
-#endif
+	this->playing = 1;
+	ma_device_start(&this->outDevice);
 }
 
 void WavStop(void *data)
@@ -199,4 +196,14 @@ void WavStop(void *data)
 	if(!data)
 		return;
 	PAWavTrack *this = data;
+	this->playing = 0;
+	ma_device_stop(&this->outDevice);
+}
+
+unsigned int WavIsPlaying(void *data)
+{
+	if(!data)
+		return 0;
+	PAWavTrack *this = data;
+	return this->playing;
 }

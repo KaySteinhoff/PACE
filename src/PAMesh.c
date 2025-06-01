@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 extern PACE *instance;
+extern PATexture defaultPACETexture;
 
 unsigned int TYPE_TAG_PAMESH = 0;
 
@@ -33,16 +34,17 @@ void MeshDraw(void *raw_data, mat4x4 perspective)
 	glUniformMatrix4fv(this->shader->perspectiveLocation, 1, GL_FALSE, (const GLfloat*)perspective);
 
 	//Activate Texture of current mesh
-	if(this->shader->texture->textureID)
-	{
 		glActiveTexture(GL_TEXTURE0);
+	if(!this->shader->texture)
+		glBindTexture(GL_TEXTURE_2D, defaultPACETexture.textureID);
+	else
 		glBindTexture(GL_TEXTURE_2D, this->shader->texture->textureID);
-	}
 	//Use vertex array of current mesh
 	glDrawArrays(GL_TRIANGLES, 0, this->numVertices);
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 float* CalculateNormals(float *vertices, uint32_t numVertices)

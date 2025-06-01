@@ -53,6 +53,34 @@ Width and height do not need to match the game window, as long as they match the
 
 __Example__
 ```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <PACE.h>
+#include <PACEGraphics.h>
+
+PACamera camera = { 0 };
+
+void die(unsigned int err)
+{
+	printf("%s(Code: %d)\n", PACEStringFromErrorCode(err), err);
+	exit(err);
+}
+
+int main(int argc, char **argv)
+{
+	PACE pace = { 0 };
+
+	unsigned int err = 0;
+	if((err = InitPACE(&pace, argc, argv)))
+		die(err);
+
+	if((err = CreatePACamera(&camera, 800, 600, 0.1, 1000.0)))
+		die(err);
+
+	// continue initialization, main loop, etc.
+
+	return 0;
+}
 ```
 
 ### RescaleCamera
@@ -73,6 +101,36 @@ Rescales the perspective, ortho and ui matricies to the given width/height.
 
 __Example__
 ```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <PACE.h>
+#include <PACEGraphics.h>
+
+PACamera camera = { 0 };
+
+void die(unsigned int err)
+{
+	printf("%s(Code: %d)\n", PACEStringFromErrorCode(err), err);
+	exit(err);
+}
+
+int main(int argc, char **argv)
+{
+	PACE pace = { 0 };
+
+	unsigned int err = 0;
+	if((err = InitPACE(&pace, argc, argv)))
+		die(err);
+
+	if((err = CreatePACamera(&camera, 800, 600, 0.1, 1000.0)))
+		die(err);
+
+	// continue initialization, main loop, etc.
+	if((err = RescaleCamera(&camera, 1000, 800)))
+		die(err);
+
+	return 0;
+}
 ```
 
 ### TransformCamera
@@ -87,8 +145,48 @@ __Arguments__
 |camera|The camera instance to transform|
 
 __Description__<br>
-Applies the transform of the given camera to the transform matrix.
+Applies the transform of the given camera to the transform matrix.<br>
+Usually there shouldn't be a need to call it manually as the UpdatePACE() function should apply the transform to the set camera, however should there be multiple camera instances that need to be updated and can't be using the normal way this function makes it possible.
 
 __Example__
 ```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <PACE.h>
+#include <PACEGraphics.h>
+
+PACamera mainCamera = { 0 }, otherCamera;
+
+void die(unsigned int err)
+{
+	printf("%s(Code: %d)\n", PACEStringFromErrorCode(err), err);
+	exit(err);
+}
+
+int main(int argc, char **argv)
+{
+	PACE pace = { 0 };
+
+	unsigned int err = 0;
+	if((err = InitPACE(&pace, argc, argv)))
+		die(err);
+
+	if((err = CreatePACamera(&mainCamera, 800, 600, 0.1, 1000.0)))
+		die(err);
+	if((err = CreatePACamera(&otherCamera, 800, 600, 0.1, 1000.0)))
+		die(err);
+
+	// continue initialization, etc.
+
+	int windowIsOpen = 1;
+	while(windowIsOpen) // main loop in this case
+	{
+		// do stuff
+		TransformCamera(&otherCamera);
+		UpdatePACE(); // mainCamera is transform here
+		windowIsOpen = PollPACE();
+	}
+
+	return 0;
+}
 ```

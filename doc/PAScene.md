@@ -50,6 +50,42 @@ Initializes the given scene instance.
 
 __Example__<br>
 ```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <PACE.h>
+#include <PACEGraphics.h>
+
+PAScene mainScene = { 0 };
+PACamera defaultCamera = { 0 };
+
+void die(unsigned int err)
+{
+	printf("%s(Code: %d)\n", PACEStringFromErrorCode(err), err);
+	exit(err);
+}
+
+int main(int argc, char **argv)
+{
+	PACE pace = { 0 };
+
+	unsigned int err = 0;	
+	if((err = InitPACE(&pace, argc, argv)))
+		die(err);
+
+	if((err = CreatePACamera(&defaultCamera, 800, 600, 0.1, 1000.0)))
+		die(err);
+
+	if((err = CreatePACE("Example", 800, 600, &defaultCamera)))
+		die(err);
+
+	if((err = CreatePAScene(&mainScene)))
+		die(err);
+
+	// Initialize shaders/materials, meshes, etc.
+	// main loop, etc.
+
+	return 0;
+}
 ```
 
 ### AddLightToScene
@@ -69,6 +105,31 @@ Adds the given light instance to the given scene instance.
 
 __Example__<br>
 ```C
+#include <PACE.h>
+#include <PACEGraphics.h>
+
+IPALight lightInstance = { 0 };
+PAScene mainScene = { 0 };
+
+void die(unsigned int err)
+{
+	printf("%s(Code: %d)\n", PACEStringFromErrorCode(err), err);
+	exit(err);
+}
+
+int main(int argc, char **argv)
+{
+	// Initialize PACE, main scene, etc.
+	// Create light instance
+	
+	unsigned int err = 0;
+	if((err = AddLightToScene(&mainScene, lightInstance)))
+		die(err);
+
+	// continue with initialization/main loop
+
+	return 0;
+}
 ```
 
 ### AddMeshToScene
@@ -88,6 +149,33 @@ Adds the given mesh instance to the given scene instance.
 
 __Example__<br>
 ```C
+#include <PACE.h>
+#include <PACEGraphics.h>
+
+PAScene mainScene = { 0 };
+
+void die(unsigned int err)
+{
+	printf("%s(Code: %d)\n", PACEStringFromErrorCode(err), err);
+	exit(err);
+}
+
+int main(int argc, char **argv)
+{
+	// Initialize PACE, main scene, etc.
+	// Create mesh instance
+	PAMesh mesh = { 0 };
+	if((err = CreatePAMesh(&mesh, &meshMaterial, meshData, meshDataCount))) // for more info on CreatePAMesh() please refer to PAMesh
+		die(err);
+	
+	unsigned int err = 0;
+	if((err = AddMeshToScene(&mainScene, newMesh(&mesh)))) // for more info on newMesh() please refer to PAMesh
+		die(err);
+
+	// continue with initialization/main loop
+
+	return 0;
+}
 ```
 
 ### AddUIToScene
@@ -107,6 +195,33 @@ Adds the given ui instance to the given scene instance.
 
 __Example__<br>
 ```C
+#include <PACE.h>
+#include <PACEGraphics.h>
+
+PAScene mainScene = { 0 };
+
+void die(unsigned int err)
+{
+	printf("%s(Code: %d)\n", PACEStringFromErrorCode(err), err);
+	exit(err);
+}
+
+int main(int argc, char **argv)
+{
+	// Initialize PACE, main scene, etc.
+	// Create ui instance
+	PAText txt = { 0 };
+	if((err = CreatePAText(&txt, 0, 0, "Example text", 80, &arialFont))) // for more info on CreatePAText() please refer to PAText
+		die(err);
+	
+	unsigned int err = 0;
+	if((err = AddUIToScene(&mainScene, newText(&txt)))) // for more info on newText() please refer to PAText
+		die(err);
+
+	// continue with initialization/main loop
+
+	return 0;
+}
 ```
 
 ### RemoveMeshFromScene
@@ -124,10 +239,41 @@ __Arguments__
 
 __Description__<br>
 Removes a mesh from a scene. Should the given index be less than 0 the given mesh will be used.<br>
-If the mesh is uninitialized and the index is less than 0 the function will fail.
+If the mesh is uninitialized and the index is less than 0 the function will fail.<br>
+It should be noted that the saving of the IPADraw instance isn't required as the function will check the provided pointer, however caching the IPADraw struct saves the function call and underlying actions, thus saving time given objects are added/removed often or in multiple scenes.
 
 __Example__<br>
 ```C
+#include <PACE.h>
+#include <PACEGraphics.h>
+
+PAScene mainScene = { 0 };
+
+void die(unsigned int err)
+{
+	printf("%s(Code: %d)\n", PACEStringFromErrorCode(err), err);
+	exit(err);
+}
+
+int main(int argc, char **argv)
+{
+	// Initialize PACE, main scene, etc.
+	// Create mesh instance
+	PAMesh mesh = { 0 };
+	if((err = CreatePAMesh(&mesh, &meshMaterial, meshData, meshDataCount))) // for more info on CreatePAMesh() please refer to PAMesh
+		die(err);
+	IPADraw meshInstance = newMesh(&mesh);
+	
+	unsigned int err = 0;
+	if((err = AddMeshToScene(&mainScene, meshInstance))) // for more info on newMesh() please refer to PAMesh
+		die(err);
+
+	// continue with initialization/main loop
+	if((err = RemoveMeshFromScene(&mainScene, -1, meshInstance)))
+		die(err);
+
+	return 0;
+}
 ```
 
 ### RemoveUIFromScene
@@ -145,10 +291,42 @@ __Arguments__
 
 __Description__<br>
 Removes a ui element from a scene. Should the given index be less than 0 the given ui instance will be used.<br>
-If the ui instance is uninitialized and the index is less than 0 the function will fail.
+If the ui instance is uninitialized and the index is less than 0 the function will fail.<br>
+It should be noted that the saving of the IPADraw instance isn't required as the function will check the provided pointer, however caching the IPADraw struct saves the function call and underlying actions, thus saving time given objects are added/removed often or in multiple scenes.
 
 __Example__<br>
 ```C
+#include <PACE.h>
+#include <PACEGraphics.h>
+
+PAScene mainScene = { 0 };
+
+void die(unsigned int err)
+{
+	printf("%s(Code: %d)\n", PACEStringFromErrorCode(err), err);
+	exit(err);
+}
+
+int main(int argc, char **argv)
+{
+	// Initialize PACE, main scene, etc.
+	// Create ui instance
+	PAText txt = { 0 };
+	if((err = CreatePAText(&txt, 0, 0, "Example text", 80, &arialFont))) // for more info on CreatePAText() please refer to PAText
+		die(err);
+	IPADraw uiInstance = newText(&txt);
+	
+	unsigned int err = 0;
+	if((err = AddUIToScene(&mainScene, uiInstance))) // for more info on newText() please refer to PAText
+		die(err);
+
+	// continue with initialization/main loop
+
+	if((err = RemoveUIFromScene(&mainScene, -1, uiInstance)))
+		die(err);
+
+	return 0;
+}
 ```
 
 ### RemoveLightFromScene
@@ -165,8 +343,36 @@ __Arguments__
 
 __Description__<br>
 Removes a light from a scene. Should the given index be less than 0 the given light will be used.<br>
-If the light is uninitialized and the index is less than 0 the function will fail.
+If the light is uninitialized and the index is less than 0 the function will fail.<br>
+It should be noted that the saving of the IPADraw instance isn't required as the function will check the provided pointer, however caching the IPADraw struct saves the function call and underlying actions, thus saving time given objects are added/removed often or in multiple scenes.
 
 __Example__<br>
 ```C
+#include <PACE.h>
+#include <PACEGraphics.h>
+
+IPALight lightInstance = { 0 };
+PAScene mainScene = { 0 };
+
+void die(unsigned int err)
+{
+	printf("%s(Code: %d)\n", PACEStringFromErrorCode(err), err);
+	exit(err);
+}
+
+int main(int argc, char **argv)
+{
+	// Initialize PACE, main scene, etc.
+	// Create light instance
+	
+	unsigned int err = 0;
+	if((err = AddLightToScene(&mainScene, lightInstance)))
+		die(err);
+
+	// continue with initialization/main loop
+	if((err = RemoveLightFromScene(&mainScene, -1, lightInstance)))
+		die(err);
+
+	return 0;
+}
 ```

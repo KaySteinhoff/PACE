@@ -87,6 +87,7 @@ int RegisterInterfaces()
 	TYPE_TAG_WAV_AUDIO = RegisterIPATrackFuncs((IPATrack_Funcs){
 		.Play = WavPlay,
 		.Stop = WavStop,
+		.IsPlaying = WavIsPlaying,
 		.SetTimeOffset = WavSetTimeOffset
 	});
 	if(!TYPE_TAG_WAV_AUDIO)
@@ -116,7 +117,7 @@ unsigned int InitPACE(PACE *pace, int argc, char **argv)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 	glViewport(0, 0, 1, 1);
-	printf("%s\n", glewGetErrorString(glewInit()));
+	printf("[GLEW]\n%s\n", glewGetErrorString(glewInit()));
 	glfwMakeContextCurrent(NULL);
 	glfwDestroyWindow(dummy);
 
@@ -125,6 +126,9 @@ unsigned int InitPACE(PACE *pace, int argc, char **argv)
 	};
 	unsigned int err = 0;
 	if((err = CreatePATexture(&defaultPACETexture, 1, 1, 3, GL_RGB, GL_RGB, defaultData)))
+		return err;
+
+	if((err = PACEAudioInit(argc, argv)))
 		return err;
 
 	pace_initialized = 1;
@@ -260,6 +264,7 @@ void UpdatePACE()
 
 void ClearPACE()
 {
+	PACEAudioTerminate();
 	instance = NULL;
 
 	glfwTerminate();

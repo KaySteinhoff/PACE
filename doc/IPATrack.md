@@ -1,7 +1,7 @@
 # IPATrack
 
 IPATrack is an <a href="PACEInterfaces.md">interface</a> used to manage music tracks of different file types such as <a href="PAWavTrack.md">*.wav</a> or *.mp3.<br>
-As these things are to be handled the same, yet are rendered using different algorithms they are perfect candidates for interfaces.<br>
+As these things are to be handled the same, yet are loaded and played using different algorithms they are perfect candidates for interfaces.<br>
 C though, as expected, doesn't have interfaces I've had to implement my own interfacing system. To do so I copied Tsodings interfacing logic, which he wrote for his panim project.
 
 ## Interface
